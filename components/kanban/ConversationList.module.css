@@ -1,0 +1,136 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.header h3 {
+    font-size: 1.125rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.filters {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.filterBtn {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.filterBtn.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border);
+    transition: background var(--transition-fast);
+}
+
+.item:hover {
+    background: var(--color-surface-hover);
+}
+
+.item.selected {
+    background: rgba(99, 102, 241, 0.1);
+    border-left: 3px solid var(--color-primary);
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--gradient-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: white;
+    flex-shrink: 0;
+}
+
+.info {
+    flex: 1;
+    min-width: 0;
+}
+
+.topRow {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.name {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.time {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+.leadTime {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-left: 4px;
+}
+
+.bottomRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.preview {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: capitalize;
+}
+
+.urgentBadge {
+    width: 16px;
+    height: 16px;
+    background: var(--color-error);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.loading {
+    padding: var(--spacing-lg);
+    text-align: center;
+    color: var(--color-text-secondary);
+}

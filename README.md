@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dashboard de Gestão de Leads - WhatsApp
 
-## Getting Started
+Sistema de gestão centralizada para atendimento via WhatsApp com IA.
 
-First, run the development server:
+## 🚀 Quick Start
 
 ```bash
+# 1. Instalar dependências
+npm install
+
+# 2. Configurar variáveis de ambiente
+# Copie ENV_TEMPLATE.md e crie .env.local com suas credenciais do Supabase
+
+# 3. Executar migrations no Supabase
+# Abra SUPABASE_SETUP.sql e execute no SQL Editor do Supabase
+
+# 4. Criar usuário de login
+# No Supabase: Authentication → Users → Add User
+
+# 5. Rodar o projeto
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse: **http://localhost:3000**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📚 Documentação
 
-## Learn More
+- **[Walkthrough Completo](../.gemini/antigravity/brain/eee042ac-51a5-4527-9a2c-c858b9fc0c9a/walkthrough.md)** - Documentação detalhada da implementação
+- **[Plano de Implementação](../.gemini/antigravity/brain/eee042ac-51a5-4527-9a2c-c858b9fc0c9a/implementation_plan.md)** - Arquitetura e plano técnico
+- **[Arquitetura do Sistema](../.gemini/antigravity/brain/eee042ac-51a5-4527-9a2c-c858b9fc0c9a/architecture.md)** - Diagramas e fluxos de dados
+- **[Setup do Supabase](./SUPABASE_SETUP.sql)** - SQL para criar todas as tabelas
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🎨 Features Implementadas (Fase 1)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### ✅ Autenticação
+- Login premium com glassmorphism
+- Integração com Supabase Auth
+- Proteção de rotas automática
+- Sessão persistente
 
-## Deploy on Vercel
+### ✅ Dashboard Principal
+- Painel de leads urgentes
+- Métricas em tempo real (4 KPIs)
+- Visão rápida do pipeline
+- Design responsivo
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### ✅ Design System
+- Dark theme premium
+- Gradientes vibrantes
+- Micro-animações
+- Componentes reutilizáveis
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 📋 Próximas Implementações
+
+- [ ] **Módulo Kanban** - Chat em tempo real
+- [ ] **Módulo Pipeline** - CRM drag-and-drop
+- [ ] **Módulo Follow-up** - Campanhas automatizadas
+- [ ] **Integração N8N** - Webhooks bidirecionais
+
+---
+
+## 🛠️ Stack Tecnológica
+
+- **Framework**: Next.js 14 (App Router)
+- **Linguagem**: TypeScript
+- **Styling**: Vanilla CSS (Design System)
+- **Database**: Supabase (PostgreSQL)
+- **Autenticação**: Supabase Auth
+- **Deploy**: Vercel (recomendado)
+
+---
+
+## 📞 Suporte
+
+Para dúvidas sobre a configuração ou próximas implementações, consulte a [documentação completa](../.gemini/antigravity/brain/eee042ac-51a5-4527-9a2c-c858b9fc0c9a/walkthrough.md).

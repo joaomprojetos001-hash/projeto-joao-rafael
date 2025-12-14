@@ -1,0 +1,203 @@
+.container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.loginBox {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 440px;
+    background: rgba(30, 41, 59, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-2xl);
+    padding: var(--spacing-3xl);
+    box-shadow: var(--shadow-xl);
+    animation: scaleIn 0.5s ease-out;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: var(--spacing-2xl);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.logoIcon {
+    animation: glow 3s ease-in-out infinite;
+}
+
+.logo h1 {
+    font-size: 1.75rem;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.subtitle {
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.inputGroup label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.error {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-md);
+    color: var(--color-error);
+    font-size: 0.875rem;
+    animation: slideInBottom 0.3s ease-out;
+}
+
+.footer {
+    margin-top: var(--spacing-2xl);
+    text-align: center;
+}
+
+/* Animated Background */
+.background {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.gradient1,
+.gradient2,
+.gradient3 {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+    animation: float 20s ease-in-out infinite;
+}
+
+.gradient1 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+    top: -250px;
+    left: -250px;
+    animation-delay: 0s;
+}
+
+.gradient2 {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, #8b5cf6 0%, transparent 70%);
+    bottom: -200px;
+    right: -200px;
+    animation-delay: 7s;
+}
+
+.gradient3 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, #3b82f6 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation-delay: 14s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+        transform: translate(30px, -30px) scale(1.1);
+    }
+
+    66% {
+        transform: translate(-20px, 20px) scale(0.9);
+    }
+}
+
+
+.buttonContainer {
+    display: flex;
+    gap: var(--spacing-md);
+    /* Using variable for consistency */
+    margin-top: var(--spacing-lg);
+    /* Using variable for consistency */
+    width: 100%;
+}
+
+.buttonContainer>button {
+    flex: 1;
+}
+
+.secondaryBtn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transition: background 0.2s ease;
+}
+
+.secondaryBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .container {
+        padding: var(--spacing-md);
+    }
+
+    .loginBox {
+        padding: var(--spacing-xl);
+        width: 100%;
+    }
+
+    .logo h1 {
+        font-size: 1.5rem;
+    }
+
+    .buttonContainer {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .buttonContainer>button {
+        width: 100%;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+}
