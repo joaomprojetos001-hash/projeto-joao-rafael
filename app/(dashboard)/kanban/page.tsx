@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import ConversationList from '@/components/kanban/ConversationList'
 import ChatInterface from '@/components/kanban/ChatInterface'
 import LeadInfo from '@/components/kanban/LeadInfo'
@@ -20,10 +20,12 @@ export default function KanbanPage() {
     return (
         <div className={styles.container}>
             <div className={`${styles.sidebar} ${selectedLeadId ? styles.hidden : ''}`}>
-                <ConversationList
-                    selectedLeadId={selectedLeadId}
-                    onSelectLead={setSelectedLeadId}
-                />
+                <Suspense fallback={<div className={styles.loading}>Carregando conversas...</div>}>
+                    <ConversationList
+                        selectedLeadId={selectedLeadId}
+                        onSelectLead={setSelectedLeadId}
+                    />
+                </Suspense>
             </div>
 
             <div className={`${styles.main} ${selectedLeadId ? styles.active : ''}`}>
