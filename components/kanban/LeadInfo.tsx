@@ -8,8 +8,14 @@ interface LeadInfoProps {
     leadId: string
 }
 
+interface Product {
+    id: string
+    nome: string
+}
+
 export default function LeadInfo({ leadId }: LeadInfoProps) {
     const [lead, setLead] = useState<any>(null)
+    const [products, setProducts] = useState<Product[]>([])
 
     useEffect(() => {
         const fetchLead = async () => {
@@ -22,7 +28,19 @@ export default function LeadInfo({ leadId }: LeadInfoProps) {
 
             if (data) setLead(data)
         }
+
+        const fetchProducts = async () => {
+            const supabase = createClient()
+            const { data } = await supabase
+                .from('produtos')
+                .select('id, nome')
+                .order('nome', { ascending: true })
+
+            if (data) setProducts(data)
+        }
+
         fetchLead()
+        fetchProducts()
     }, [leadId])
 
     const handleToggleAI = async () => {
@@ -65,6 +83,8 @@ export default function LeadInfo({ leadId }: LeadInfoProps) {
 
     if (!lead) return null
 
+    const currentProduct = products.find(p => p.id === lead.produto_interesse)
+
     return (
         <div className={styles.container}>
             <div className={styles.header}>
@@ -84,6 +104,39 @@ export default function LeadInfo({ leadId }: LeadInfoProps) {
 
             <div className={styles.section}>
                 <h4 className={styles.sectionTitle}>Gestão</h4>
+
+                <label className={styles.label}>Produto de Interesse</label>
+                {currentProduct ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                        <span style={{
+                            background: '#e0e7ff', color: '#3730a3', padding: '4px 8px',
+                            borderRadius: '4px', fontSize: '14px', fontWeight: 500
+                        }}>
+                            {currentProduct.nome}
+                        </span>
+                        <button
+                            onClick={() => handleUpdateField('produto_interesse', null)}
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '16px' }}
+                            title="Remover produto"
+                        >
+                            ❌
+                        </button>
+                    </div>
+                ) : (
+                    <select
+                        className={styles.input}
+                        value=""
+                        onChange={(e) => handleUpdateField('produto_interesse', e.target.value)}
+                        style={{ marginBottom: '16px' }}
+                    >
+                        <option value="" disabled>Selecione um produto...</option>
+                        {products.map(p => (
+                            <option key={p.id} value={p.id}>
+                                {p.nome}
+                            </option>
+                        ))}
+                    </select>
+                )}
 
                 <label className={styles.label}>Atendente Responsável</label>
                 <input

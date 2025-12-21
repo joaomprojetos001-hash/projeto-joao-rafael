@@ -31,23 +31,8 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
-    // Proteção de rotas: redireciona para /login se não estiver autenticado
-    if (
-        !user &&
-        !request.nextUrl.pathname.startsWith('/login') &&
-        request.nextUrl.pathname !== '/'
-    ) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/login'
-        return NextResponse.redirect(url)
-    }
-
-    // Redireciona para /dashboard se estiver autenticado e tentar acessar /login
-    if (user && request.nextUrl.pathname.startsWith('/login')) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/dashboard'
-        return NextResponse.redirect(url)
-    }
+    // IMPORTANT: Route protection is handled in the root middleware.ts
+    // This function should ONLY manage session refresh.
 
     return supabaseResponse
 }

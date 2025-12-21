@@ -33,16 +33,59 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
     useEffect(() => {
         const fetchLeads = async () => {
             const supabase = createClient()
+
+            // 1. Get Current User
+            const { data: { user } } = await supabase.auth.getUser()
+
+            let allowedProductIds: string[] = []
+            let isAdmin = false
+
+            if (user) {
+                // 2. Get Profile & Products
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single()
+
+                if (profile?.role === 'admin') {
+                    isAdmin = true
+                } else {
+                    const { data: userProducts } = await supabase
+                        .from('user_products')
+                        .select('product_id')
+                        .eq('user_id', user.id)
+
+                    if (userProducts) {
+                        allowedProductIds = userProducts.map(up => up.product_id)
+                    }
+                }
+            }
+
+            // 3. Fetch Leads
             const { data, error } = await supabase
                 .from('leads')
                 .select('*')
                 .order('updated_at', { ascending: false })
 
             if (data) {
-                setLeads(data)
-                // Se houver lead na URL e nenhum selecionado, selecionar ele
+                // 4. Apply Access Control Filter
+                const visibleLeads = data.filter(lead => {
+                    // Admin sees all
+                    if (isAdmin) return true
+                    // Urgent leads visible to all
+                    if (lead.is_urgent) return true
+                    // Lead matches one of user's products
+                    if (lead.produto_interesse && allowedProductIds.includes(lead.produto_interesse)) return true
+
+                    return false
+                })
+
+                setLeads(visibleLeads)
+
+                // Keep selection if visible
                 if (urlLeadId && !selectedLeadId) {
-                    const targetLead = data.find(l => l.id === urlLeadId)
+                    const targetLead = visibleLeads.find(l => l.id === urlLeadId)
                     if (targetLead) onSelectLead(urlLeadId)
                 }
             }
@@ -56,7 +99,7 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
         const channel = supabase
             .channel('leads-list')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' },
-                () => fetchLeads()
+                () => fetchLeads() // Re-fetch to re-apply filters robustly
             )
             .subscribe()
 
@@ -127,7 +170,15 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
                             className={`${styles.item} ${selectedLeadId === lead.id ? styles.selected : ''}`}
                             onClick={() => onSelectLead(lead.id)}
                         >
-                            <div className={styles.avatar}>
+                            <div
+                                className={styles.avatar}
+                                data-status={
+                                    lead.status === 'em_atendimento' ? 'Em Atendimento' :
+                                        lead.status === 'nao_respondido' ? 'Não Respondido' :
+                                            lead.status === 'em_negociacao' ? 'Em Negociação' :
+                                                lead.status === 'fechado' ? 'Fechado' : ''
+                                }
+                            >
                                 {lead.name ? lead.name[0].toUpperCase() : '#'}
                             </div>
                             <div className={styles.leadInfo}>

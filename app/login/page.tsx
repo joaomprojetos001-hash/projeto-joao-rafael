@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, FormEvent } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -26,6 +27,31 @@ export default function LoginPage() {
 
             if (error) throw error
 
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('is_approved, role')
+                .eq('id', (await supabase.auth.getUser()).data.user?.id)
+                .single()
+
+            console.log("LOGIN DEBUG: Profile Fetch", profile, "Error", profileError);
+
+            if (profileError) {
+                console.error("LOGIN ERROR: Failed to fetch profile", profileError)
+                throw new Error('Erro ao verificar permissões da conta.')
+            }
+
+            // FAIL CLOSED: If profile doesn't exist yet (shouldn't happen with trigger), deny login.
+            if (!profile) {
+                console.error("LOGIN ERROR: Profile not found for user", (await supabase.auth.getUser()).data.user?.id)
+                await supabase.auth.signOut()
+                throw new Error('Perfil de usuário não encontrado. Entre em contato com o suporte.')
+            }
+
+            if (!profile.is_approved) {
+                await supabase.auth.signOut()
+                throw new Error('Sua conta ainda não foi aprovada pelo administrador.')
+            }
+
             router.push('/dashboard')
             router.refresh()
         } catch (err: any) {
@@ -40,28 +66,25 @@ export default function LoginPage() {
             <div className={styles.loginBox}>
                 <div className={styles.header}>
                     <div className={styles.logo}>
-                        <div className={styles.logoIcon}>
-                            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                                <rect width="40" height="40" rx="12" fill="url(#gradient)" />
-                                <path
-                                    d="M20 10L12 18L20 26L28 18L20 10Z"
-                                    fill="white"
-                                    fillOpacity="0.9"
-                                />
-                                <path
-                                    d="M20 18L16 22L20 26L24 22L20 18Z"
-                                    fill="white"
-                                    fillOpacity="0.6"
-                                />
-                                <defs>
-                                    <linearGradient id="gradient" x1="0" y1="0" x2="40" y2="40">
-                                        <stop offset="0%" stopColor="#6366f1" />
-                                        <stop offset="100%" stopColor="#8b5cf6" />
-                                    </linearGradient>
-                                </defs>
-                            </svg>
+                        <img
+                            src="/logo-winged-lion.png"
+                            alt="PSC+TS"
+                            className={styles.logoImage}
+                        />
+                        {/* Optional: Add text if logo image is icon only. 
+                             Assuming logo image might be just the lion based on Sidebar code.
+                             Sidebar had text separate. Let's add text here too. */}
+                        <div>
+                            <h1>PSC+TS</h1>
+                            <span style={{
+                                display: 'block',
+                                fontSize: '0.8rem',
+                                letterSpacing: '0.3em',
+                                color: 'var(--color-gold-light)',
+                                fontWeight: 300,
+                                marginTop: '-5px'
+                            }}>CONSULTORIA</span>
                         </div>
-                        <h1>Dashboard de Leads</h1>
                     </div>
                     <p className={styles.subtitle}>
                         Gestão inteligente de atendimento via WhatsApp
@@ -115,32 +138,21 @@ export default function LoginPage() {
                             {loading ? 'Processando...' : 'Entrar'}
                         </button>
 
-                        <button
-                            type="button"
-                            className={`btn ${styles.secondaryBtn}`}
-                            disabled={loading}
-                            onClick={async () => {
-                                setLoading(true)
-                                setError('')
-                                try {
-                                    const supabase = createClient()
-                                    const { error } = await supabase.auth.signUp({
-                                        email,
-                                        password,
-                                    })
-                                    if (error) throw error
-                                    alert('Conta criada! Verifique seu email ou faça login.')
-                                } catch (err: any) {
-                                    setError(err.message)
-                                } finally {
-                                    setLoading(false)
-                                }
-                            }}
-                        >
-                            Criar Conta
-                        </button>
                     </div>
                 </form>
+
+                <div className={styles.buttonContainer} style={{ marginTop: '1rem' }}>
+                    <button
+                        type="button"
+                        onClick={() => window.location.href = '/register'}
+                        className={`btn ${styles.secondaryBtn}`}
+                        style={{
+                            width: '100%'
+                        }}
+                    >
+                        Criar Conta
+                    </button>
+                </div>
 
                 <div className={styles.footer}>
                     <p className="text-sm text-muted">

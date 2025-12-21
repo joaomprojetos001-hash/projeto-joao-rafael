@@ -76,7 +76,7 @@ CREATE TABLE leads (
   phone TEXT UNIQUE NOT NULL,
   name TEXT,
   status lead_status DEFAULT 'em_atendimento',
-  produto_interesse UUID REFERENCES produtos(id),
+  produto_interesse TEXT,
   atendente_responsavel TEXT,
   is_ai_active BOOLEAN DEFAULT true,
   is_urgent BOOLEAN DEFAULT false,

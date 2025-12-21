@@ -11,16 +11,22 @@ interface Lead {
     updated_at: string
 }
 
+interface Product {
+    id: string
+    nome: string
+}
+
 interface Props {
     title: string
     color: string
     leads: any[]
+    products: Product[]
     onDragStart: (e: React.DragEvent, id: string) => void
     onViewLead: (lead: any) => void
     onMoveLead?: (leadId: string, status: string) => void
 }
 
-export default function PipelineColumn({ title, color, leads, onDragStart, onViewLead, onMoveLead }: Props) {
+export default function PipelineColumn({ title, color, leads, products, onDragStart, onViewLead, onMoveLead }: Props) {
     return (
         <div className={styles.column}>
             <div className={styles.header} style={{ borderTopColor: color }}>
@@ -35,6 +41,7 @@ export default function PipelineColumn({ title, color, leads, onDragStart, onVie
                     <PipelineCard
                         key={lead.id}
                         lead={lead}
+                        products={products}
                         onDragStart={onDragStart}
                         onView={onViewLead}
                         onMove={onMoveLead}

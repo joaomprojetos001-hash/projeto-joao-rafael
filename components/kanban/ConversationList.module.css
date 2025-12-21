@@ -2,6 +2,10 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    /* If this is the 'Follow Up' block, it needs to be black */
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
 }
 
 .header {
@@ -12,6 +16,7 @@
 .header h3 {
     font-size: 1.125rem;
     margin-bottom: var(--spacing-sm);
+    color: var(--color-text-primary);
 }
 
 .filters {
@@ -23,46 +28,54 @@
     font-size: 0.75rem;
     padding: 4px 8px;
     border-radius: var(--radius-full);
-    background: var(--color-surface);
+    background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     color: var(--color-text-secondary);
     transition: all var(--transition-fast);
 }
 
 .filterBtn.active {
-    background: var(--color-primary);
+    background: var(--color-gold-primary);
     color: white;
-    border-color: var(--color-primary);
+    border-color: var(--color-gold-primary);
 }
 
 .list {
     flex: 1;
     overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.list::-webkit-scrollbar {
+    display: none;
 }
 
 .item {
     display: flex;
-    gap: var(--spacing-md);
-    padding: var(--spacing-md);
+    gap: 12px;
+    padding: 16px;
     cursor: pointer;
+    transition: all 0.2s;
     border-bottom: 1px solid var(--color-border);
-    transition: background var(--transition-fast);
+    align-items: center;
+    background: var(--color-bg-primary);
 }
 
 .item:hover {
-    background: var(--color-surface-hover);
+    background: var(--color-bg-hover);
+    border-left: 3px solid var(--color-gold-primary);
 }
 
 .item.selected {
-    background: rgba(99, 102, 241, 0.1);
-    border-left: 3px solid var(--color-primary);
+    background: var(--color-bg-secondary);
+    border-left: 3px solid var(--color-gold-primary);
 }
 
 .avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--gradient-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -71,9 +84,36 @@
     flex-shrink: 0;
 }
 
+/* Avatar colors by status */
+/* Em Atendimento = Blue */
+.avatar[data-status="Em Atendimento"] {
+    background: linear-gradient(135deg, #4A90E2 0%, #2C5AA0 100%);
+}
+
+/* Não Respondido = Red */
+.avatar[data-status="Não Respondido"] {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+}
+
+/* Em Negociação = Orange */
+.avatar[data-status="Em Negociação"] {
+    background: linear-gradient(135deg, #F6AD55 0%, #ED8936 100%);
+}
+
+/* Fechado = Green (per user request) */
+.avatar[data-status="Fechado"] {
+    background: linear-gradient(135deg, #48BB78 0%, #38A169 100%);
+}
+
+/* Default fallback */
+.avatar:not([data-status]) {
+    background: linear-gradient(135deg, #718096 0%, #4A5568 100%);
+}
+
 .info {
     flex: 1;
     min-width: 0;
+    color: var(--color-text-primary);
 }
 
 .topRow {
@@ -88,6 +128,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--color-text-primary);
 }
 
 .time {
@@ -132,5 +173,5 @@
 .loading {
     padding: var(--spacing-lg);
     text-align: center;
-    color: var(--color-text-secondary);
+    color: var(--color-text-card-secondary);
 }

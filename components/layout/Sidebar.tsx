@@ -5,65 +5,55 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import styles from './Sidebar.module.css'
+import { LayoutDashboard, Kanban, GitPullRequest, MessageSquare, Phone, LogOut, ChevronLeft, ChevronRight, Settings } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
-const menuItems = [
-    {
-        name: 'Dashboard',
-        href: '/dashboard',
-        icon: (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-            </svg>
-        ),
-    },
-    {
-        name: 'Kanban',
-        href: '/kanban',
-        icon: (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-            </svg>
-        ),
-    },
-    {
-        name: 'Pipeline',
-        href: '/pipeline',
-        icon: (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-            </svg>
-        ),
-    },
-    {
-        name: 'Follow-up',
-        href: '/follow-up',
-        icon: (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-            </svg>
-        ),
-    },
-    {
-        name: 'WhatsApp',
-        href: '/whatsapp',
-        icon: (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10 2a8 8 0 00-8 8c0 2.22 1.02 4.2 2.62 5.56L2 18l2.44-1.22A8 8 0 0010 18a8 8 0 008-8 8 8 0 00-8-8zm0 14a6 6 0 01-4.06-1.58l-.3-.2-.9.45 1.25 1.25-.5.5-1.5-1.5a6 6 0 0110.61-4.42l.3-.2.9-.45-1.25-1.25.5-.5 1.5 1.5a6 6 0 01-10.61 4.42z" />
-            </svg>
-        ),
-    },
+const baseMenuItems = [
+    { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={20} /> },
+    { name: 'Kanban', href: '/kanban', icon: <Kanban size={20} /> },
+    { name: 'Pipeline', href: '/pipeline', icon: <GitPullRequest size={20} /> },
+    { name: 'Follow-up', href: '/follow-up', icon: <MessageSquare size={20} /> },
+    // WhatsApp and Admin will be conditional
 ]
 
 interface SidebarProps {
     isOpen?: boolean
     onClose?: () => void
+    onCollapse?: (collapsed: boolean) => void
 }
 
-export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
+export function Sidebar({ isOpen = false, onClose, onCollapse }: SidebarProps) {
     const pathname = usePathname()
     const router = useRouter()
+    const [isCollapsed, setIsCollapsed] = useState(false)
+    const [isAdmin, setIsAdmin] = useState(false)
+    const [loadingRole, setLoadingRole] = useState(true)
+
+    useEffect(() => {
+        const checkRole = async () => {
+            console.log("Sidebar: Checking role...")
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single()
+
+                console.log("Sidebar: Profile fetch result:", profile, "Error:", error)
+
+                if (profile?.role === 'admin') {
+                    console.log("Sidebar: User IS admin!")
+                    setIsAdmin(true)
+                } else {
+                    console.log("Sidebar: User is NOT admin.", profile?.role)
+                }
+            }
+            setLoadingRole(false)
+        }
+        checkRole()
+    }, [])
 
     const handleLogout = async () => {
         const supabase = createClient()
@@ -72,36 +62,68 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         router.refresh()
     }
 
+    const toggleCollapse = () => {
+        const newState = !isCollapsed
+        setIsCollapsed(newState)
+        if (onCollapse) onCollapse(newState)
+    }
+
+    // Build the final menu
+    const menuItems = [...baseMenuItems]
+
+    if (isAdmin) {
+        menuItems.push({ name: 'WhatsApp', href: '/whatsapp', icon: <Phone size={20} /> })
+    }
+
+    // Configuração is available for everyone, but destination differs
+    menuItems.push({
+        name: 'Configuração',
+        href: isAdmin ? '/admin' : '/profile',
+        icon: <Settings size={20} />
+    })
+
     return (
         <>
             <div
                 className={`${styles.overlay} ${isOpen ? styles.visible : ''}`}
                 onClick={onClose}
             />
-            <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
-                <div className={styles.logoSection}>
-                    <div className={styles.logo}>
-                        <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-                            <rect width="40" height="40" rx="12" fill="url(#gradient)" />
-                            <path
-                                d="M20 10L12 18L20 26L28 18L20 10Z"
-                                fill="white"
-                                fillOpacity="0.9"
-                            />
-                            <path
-                                d="M20 18L16 22L20 26L24 22L20 18Z"
-                                fill="white"
-                                fillOpacity="0.6"
-                            />
-                            <defs>
-                                <linearGradient id="gradient" x1="0" y1="0" x2="40" y2="40">
-                                    <stop offset="0%" stopColor="#6366f1" />
-                                    <stop offset="100%" stopColor="#8b5cf6" />
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <span className={styles.logoText}>Leads Dashboard</span>
+            <aside
+                className={`
+                    ${styles.sidebar} 
+                    ${isOpen ? styles.open : ''} 
+                    ${isCollapsed ? styles.collapsed : ''}
+                `}
+            >
+                {/* Toggle Button (Desktop Only) */}
+                <button
+                    className={styles.collapseBtn}
+                    onClick={toggleCollapse}
+                    title={isCollapsed ? "Expandir" : "Recolher"}
+                >
+                    {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                </button>
+
+                {/* Logo */}
+                <div className={styles.logo}>
+                    <div className={styles.logoImage}>
+                        <img
+                            src="/logo-winged-lion.png"
+                            alt="PSC Consultoria"
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'contain',
+                                filter: 'drop-shadow(0 2px 8px rgba(218, 165, 32, 0.3))'
+                            }}
+                        />
                     </div>
+                    {!isCollapsed && (
+                        <div className={styles.logoText}>
+                            <span className={styles.companyName}>PSC+TS</span>
+                            <span className={styles.companySubtitle}>CONSULTORIA</span>
+                        </div>
+                    )}
                 </div>
 
                 <nav className={styles.nav}>
@@ -113,27 +135,23 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                                 href={item.href}
                                 className={`${styles.navItem} ${isActive ? styles.active : ''}`}
                                 onClick={onClose}
+                                title={isCollapsed ? item.name : ''}
                             >
                                 <div className={styles.navIcon}>{item.icon}</div>
-                                <span>{item.name}</span>
+                                {!isCollapsed && <span>{item.name}</span>}
                             </Link>
                         )
                     })}
                 </nav>
 
                 <div className={styles.footer}>
-                    <button onClick={handleLogout} className={styles.logoutBtn}>
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                            <path
-                                fillRule="evenodd"
-                                d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4.414l-4.293 4.293a1 1 0 01-1.414 0L4 7.414 5.414 6l3.293 3.293L13.586 6 15 7.414z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
-                        <span>Sair</span>
+                    <button onClick={handleLogout} className={styles.logoutBtn} title={isCollapsed ? "Sair" : ''}>
+                        <LogOut size={20} />
+                        {!isCollapsed && <span>Sair</span>}
                     </button>
                 </div>
             </aside>
         </>
     )
 }
+

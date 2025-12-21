@@ -13,6 +13,7 @@ interface Lead {
     atendente_responsavel?: string
     created_at: string
     is_blocked?: boolean
+    produto_interesse?: string
 }
 
 interface Props {
@@ -103,7 +104,9 @@ export default function PipelineLeadModal({ lead, onClose, onUpdate }: Props) {
                         <div className={styles.field}>
                             <label>Status IA</label>
                             <span className={`${styles.badge} ${lead.is_ai_active ? styles.active : styles.inactive}`}>
-                                {lead.is_ai_active ? '🤖 IA Ativa' : '👤 Humano'}
+                                <span style={{ color: lead.is_ai_active ? 'inherit' : '#2C5AA0' }}>
+                                    {lead.is_ai_active ? '🤖 IA Ativa' : '👤 Humano'}
+                                </span>
                             </span>
                         </div>
 

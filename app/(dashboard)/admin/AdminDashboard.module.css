@@ -1,0 +1,152 @@
+.container {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: var(--color-text-primary);
+}
+
+.subtitle {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 32px 0 16px;
+    color: var(--color-text-secondary);
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.statCard {
+    background: var(--color-surface);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+}
+
+.statCard h3 {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+}
+
+.statCard p {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.tableContainer {
+    background: var(--color-surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.table th {
+    padding: 16px;
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    font-weight: 600;
+}
+
+.table td {
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    font-size: 14px;
+}
+
+.badgeSuccess {
+    background: rgba(var(--color-success-rgb), 0.1);
+    color: var(--color-success);
+    padding: 4px 8px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid rgba(var(--color-success-rgb), 0.2);
+}
+
+.badgeWarning {
+    background: rgba(var(--color-warning-rgb), 0.1);
+    color: var(--color-warning);
+    padding: 4px 8px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid rgba(var(--color-warning-rgb), 0.2);
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.approveBtn {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.approveBtn:hover {
+    background: var(--color-primary-dark);
+}
+
+.roleBtn {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--color-text-primary);
+    transition: background 0.2s;
+}
+
+.roleBtn:hover {
+    background: var(--color-bg-hover);
+}
+
+.deleteBtn {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--color-error);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.deleteBtn:hover {
+    background: rgba(220, 38, 38, 0.2);
+}
+
+.loading {
+    padding: 2rem;
+    text-align: center;
+    color: var(--color-text-secondary);
+}

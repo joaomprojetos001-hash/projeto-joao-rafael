@@ -37,9 +37,7 @@ export default function KanbanPage() {
                                 onBack={handleBackToList}
                             />
                         </div>
-                        <div className={styles.infoArea}>
-                            <LeadInfo leadId={selectedLeadId} />
-                        </div>
+                        {/* Info panel removed - accessed via 3-dots button in ChatInterface */}
                     </div>
                 ) : (
                     <div className={styles.emptyState}>

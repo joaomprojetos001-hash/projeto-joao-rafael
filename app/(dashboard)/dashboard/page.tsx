@@ -39,41 +39,84 @@ export default function DashboardPage() {
         negociacao: 0,
         fechado: 0
     })
+    const [debugInfo, setDebugInfo] = useState<any>(null)
 
     useEffect(() => {
         const fetchData = async () => {
+            console.log("Dashboard: Starting fetch...")
             const supabase = createClient()
+
+            // 1. Get User Profile & Role
+            const { data: { user } } = await supabase.auth.getUser()
+
+            let productIds: string[] | null = null
+            let isAdmin = false
+
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single()
+
+                if (profile?.role === 'admin') {
+                    isAdmin = true
+                } else {
+                    // Fetch assigned products
+                    const { data: products } = await supabase
+                        .from('user_products')
+                        .select('product_id')
+                        .eq('user_id', user.id)
+
+                    if (products) {
+                        productIds = products.map(p => p.product_id)
+                    }
+                }
+            }
+
             const today = new Date().toISOString().split('T')[0]
 
+            // Helper to apply filters
+            const applyFilter = (query: any) => {
+                if (!isAdmin && productIds && productIds.length > 0) {
+                    return query.in('produto_interesse', productIds)
+                } else if (!isAdmin && (!productIds || productIds.length === 0)) {
+                    // Agent with no products -> return empty/impossible
+                    return query.eq('id', '00000000-0000-0000-0000-000000000000')
+                }
+                return query
+            }
+
             // 1. Total Leads
-            const { count: totalLeads } = await supabase
-                .from('leads')
-                .select('*', { count: 'exact', head: true })
+            let queryTotal = supabase.from('leads').select('*', { count: 'exact', head: true })
+            queryTotal = applyFilter(queryTotal)
+            const { count: totalLeads } = await queryTotal
 
             // 2. Leads Hoje
-            const { count: leadsToday } = await supabase
-                .from('leads')
-                .select('*', { count: 'exact', head: true })
-                .gte('created_at', today)
+            let queryToday = supabase.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', today)
+            queryToday = applyFilter(queryToday)
+            const { count: leadsToday } = await queryToday
 
             // 3. Fechados
-            const { count: closedTotal } = await supabase
-                .from('leads')
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'fechado')
+            let queryClosed = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'fechado')
+            queryClosed = applyFilter(queryClosed)
+            const { count: closedTotal } = await queryClosed
 
             // 4. Leads Urgentes (Top 3)
-            const { data: urgents } = await supabase
+            let queryUrgents = supabase
                 .from('leads')
                 .select('*')
                 .eq('is_urgent', true)
+                .neq('status', 'em_atendimento')
                 .order('updated_at', { ascending: false })
                 .limit(3)
+            queryUrgents = applyFilter(queryUrgents)
+            const { data: urgents } = await queryUrgents
 
             // 5. Pipeline Stats
-            const { data: allLeads } = await supabase
-                .from('leads')
-                .select('status')
+            let queryPipeline = supabase.from('leads').select('status, produto_interesse')
+            queryPipeline = applyFilter(queryPipeline)
+            const { data: allLeads } = await queryPipeline
 
             const stats = {
                 atendimento: 0,
@@ -96,7 +139,7 @@ export default function DashboardPage() {
                 leadsToday: leadsToday || 0,
                 closedTotal: closedTotal || 0,
                 closureRate: totalLeads ? `${Math.round(((closedTotal || 0) / totalLeads) * 100)}%` : '0%',
-                avgResponseTime: '5 min' // Placeholder por enquanto
+                avgResponseTime: '5 min'
             })
 
             if (urgents) setUrgentLeads(urgents)
@@ -147,8 +190,18 @@ export default function DashboardPage() {
                                 </p>
                                 <button
                                     className="btn btn-primary"
-                                    style={{ marginTop: 'var(--spacing-md)', width: '100%' }}
-                                    onClick={() => router.push(`/kanban?leadId=${lead.id}`)}
+                                    style={{ marginTop: 'var(--spacing-md)', width: '100%', background: '#FF8A80', borderColor: '#FF8A80' }}
+                                    onClick={async () => {
+                                        // Update lead status to em_atendimento
+                                        const supabase = createClient()
+                                        await supabase
+                                            .from('leads')
+                                            .update({ status: 'em_atendimento' })
+                                            .eq('id', lead.id)
+
+                                        // Navigate to kanban
+                                        router.push(`/kanban?leadId=${lead.id}`)
+                                    }}
                                 >
                                     Atender Agora
                                 </button>
@@ -166,7 +219,7 @@ export default function DashboardPage() {
                 </div>
                 <div className={styles.metricsGrid}>
                     <div className={`card ${styles.metricCard}`}>
-                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-primary)' }}>
+                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-gold)' }}>
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                         </div>
                         <div className={styles.metricContent}>
@@ -177,8 +230,10 @@ export default function DashboardPage() {
                     </div>
 
                     <div className={`card ${styles.metricCard}`}>
-                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-success)' }}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-gold)' }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
                         </div>
                         <div className={styles.metricContent}>
                             <p className="text-sm text-secondary">Taxa Conclusão</p>
@@ -188,8 +243,11 @@ export default function DashboardPage() {
                     </div>
 
                     <div className={`card ${styles.metricCard}`}>
-                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-secondary)' }}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-blue)' }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
                         </div>
                         <div className={styles.metricContent}>
                             <p className="text-sm text-secondary">Fechados</p>
@@ -229,6 +287,7 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </section>
+
         </div>
     )
 }

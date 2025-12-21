@@ -11,6 +11,7 @@ export default function DashboardLayout({
     children: React.ReactNode
 }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
     return (
         <div className={styles.dashboardContainer}>
@@ -18,10 +19,14 @@ export default function DashboardLayout({
             <Sidebar
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
+                onCollapse={setIsSidebarCollapsed}
             />
-            <main className={styles.mainContent}>
+            <main
+                className={`${styles.mainContent} ${isSidebarCollapsed ? styles.collapsed : ''}`}
+            >
                 {children}
             </main>
         </div>
     )
 }
+

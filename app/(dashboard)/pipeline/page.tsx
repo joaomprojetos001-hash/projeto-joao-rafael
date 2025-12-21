@@ -27,8 +27,14 @@ const COLUMNS = [
     { id: 'nao_respondido', title: 'Não Respondido', color: '#ef4444' }
 ]
 
+interface Product {
+    id: string
+    nome: string
+}
+
 export default function PipelinePage() {
     const [leads, setLeads] = useState<Lead[]>([])
+    const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
 
@@ -43,17 +49,73 @@ export default function PipelinePage() {
 
     const fetchLeads = async () => {
         const supabase = createClient()
+
+        // 1. Get Access Control Data
+        const { data: { user } } = await supabase.auth.getUser()
+
+        let allowedProductIds: string[] = []
+        let isAdmin = false
+
+        if (user) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+
+            if (profile?.role === 'admin') {
+                isAdmin = true
+            } else {
+                const { data: userProducts } = await supabase
+                    .from('user_products')
+                    .select('product_id')
+                    .eq('user_id', user.id)
+
+                if (userProducts) {
+                    allowedProductIds = userProducts.map(up => up.product_id)
+                }
+            }
+        }
+
+        // 2. Fetch All Leads
         const { data } = await supabase
             .from('leads')
             .select('*')
-            .order('updated_at', { ascending: false })
+            .order('created_at', { ascending: false })
 
-        if (data) setLeads(data)
+        if (data) {
+            // 3. Filter Leads
+            const visibleLeads = data.filter(lead => {
+                if (isAdmin) return true
+                const isUrgent = (lead as any).is_urgent === true
+                if (isUrgent) return true
+
+                if (lead.produto_interesse && allowedProductIds.includes(lead.produto_interesse)) return true
+
+                return false
+            })
+            setLeads(visibleLeads)
+        }
+    }
+
+    const fetchProducts = async () => {
+        const supabase = createClient()
+        const { data } = await supabase
+            .from('produtos')
+            .select('id, nome')
+            .order('nome', { ascending: true })
+
+        if (data) setProducts(data)
+    }
+
+    const initData = async () => {
+        setLoading(true)
+        await Promise.all([fetchLeads(), fetchProducts()])
         setLoading(false)
     }
 
     useEffect(() => {
-        fetchLeads()
+        initData()
 
         const supabase = createClient()
         const channel = supabase
@@ -165,6 +227,7 @@ export default function PipelinePage() {
                             title={col.title}
                             color={col.color}
                             leads={leads.filter(l => l.status === col.id)}
+                            products={products}
                             onDragStart={handleDragStart}
                             onViewLead={setSelectedLead}
                             onMoveLead={(leadId) => openMoveModal(leadId)}

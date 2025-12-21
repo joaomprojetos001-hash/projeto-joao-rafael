@@ -128,3 +128,24 @@ input:checked+.slider:before {
     opacity: 1 !important;
     accent-color: var(--color-primary);
 }
+
+.deleteBtn {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: transparent;
+    color: #EF4444;
+    border: 1px solid #EF4444;
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+}
+
+.deleteBtn:hover {
+    background: #EF4444;
+    color: white;
+}
