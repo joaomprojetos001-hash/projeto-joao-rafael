@@ -119,23 +119,23 @@ export default function AdminApprovals() {
                     <tbody>
                         {users.map(user => (
                             <tr key={user.id}>
-                                <td>
+                                <td data-label="Nome">
                                     <strong>{user.name}</strong>
                                 </td>
-                                <td>
+                                <td data-label="Info">
                                     <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
                                         {user.phone}<br />
                                         ID: {user.id.slice(0, 8)}...
                                     </div>
                                 </td>
-                                <td>
+                                <td data-label="Status">
                                     {user.is_approved ? (
                                         <span className={styles.badgeSuccess}>Aprovado</span>
                                     ) : (
                                         <span className={styles.badgeWarning}>Pendente</span>
                                     )}
                                 </td>
-                                <td>
+                                <td data-label="Função">
                                     <span style={{
                                         fontWeight: 'bold',
                                         color: user.role === 'admin' ? 'var(--color-primary)' : 'var(--color-text-secondary)'
@@ -143,7 +143,7 @@ export default function AdminApprovals() {
                                         {user.role === 'admin' ? 'ADMIN' : 'Agente'}
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="Ações">
                                     <div className={styles.actions}>
                                         {!user.is_approved && (
                                             <button

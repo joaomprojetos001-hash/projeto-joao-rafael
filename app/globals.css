@@ -17,6 +17,8 @@
   --color-bg-tertiary: #E8ECF1;
   /* Soft gray - subtle backgrounds */
 
+  --header-bg: rgba(255, 255, 255, 0.9);
+
   /* Gold Palette */
   --color-gold-primary: #DAA520;
   /* Goldenrod - main gold */
@@ -107,6 +109,8 @@
   /* Panel Background */
   --color-bg-tertiary: #1f242c;
   /* Card Background */
+
+  --header-bg: rgba(22, 27, 34, 0.9);
 
   --color-text-primary: #f0f6fc;
   /* White text */

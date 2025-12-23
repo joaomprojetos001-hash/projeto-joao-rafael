@@ -59,7 +59,7 @@ export default function AdminAnalytics() {
         <div className={styles.statCard}>
             <h2>📊 Relatórios de Performance</h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '1rem', marginBottom: '2rem' }}>
+            <div className={styles.analyticsGrid}>
                 <div style={{ padding: '1rem', background: 'var(--color-bg-secondary)', borderRadius: '8px', textAlign: 'center' }}>
                     <h3>{stats.totalLeads}</h3>
                     <p className="text-sm">Total Leads</p>

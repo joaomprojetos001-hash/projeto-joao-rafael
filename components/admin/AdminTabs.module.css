@@ -7,6 +7,15 @@
     border: 1px solid var(--color-border);
     margin-bottom: 2rem;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Smooth scrolling on iOS */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+/* Hide scrollbar for Chrome/Safari/Opera */
+.container::-webkit-scrollbar {
+    display: none;
 }
 
 .tab {
@@ -22,6 +31,8 @@
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
+    flex-shrink: 0;
+    /* Prevent squashing */
 }
 
 .tab:hover {
@@ -33,4 +44,47 @@
     background: var(--color-gold-primary);
     color: white;
     box-shadow: var(--shadow-sm);
+}
+
+
+
+.mobileSelect {
+    display: none;
+    width: 100%;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    outline: none;
+}
+
+.mobileSelect:focus {
+    border-color: var(--color-gold-primary);
+}
+
+@media (max-width: 768px) {
+    .container {
+        display: none;
+    }
+
+    .mobileSelect {
+        display: block;
+    }
+
+
+    .tab {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        background: var(--color-surface);
+        /* Card background for tabs */
+        border: 1px solid var(--color-border);
+    }
+
+    .tab.active {
+        background: var(--color-gold-primary);
+        border-color: var(--color-gold-primary);
+    }
 }

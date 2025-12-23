@@ -16,20 +16,34 @@ export default function AdminTabs({ activeTab, onTabChange }: Props) {
     ]
 
     return (
-        <div className={styles.container}>
-            {tabs.map(tab => {
-                const Icon = tab.icon
-                return (
-                    <button
-                        key={tab.id}
-                        className={`${styles.tab} ${activeTab === tab.id ? styles.active : ''}`}
-                        onClick={() => onTabChange(tab.id)}
-                    >
-                        <Icon size={18} />
-                        <span>{tab.label}</span>
-                    </button>
-                )
-            })}
-        </div>
+        <>
+            <select
+                className={styles.mobileSelect}
+                value={activeTab}
+                onChange={(e) => onTabChange(e.target.value)}
+            >
+                {tabs.map(tab => (
+                    <option key={tab.id} value={tab.id}>
+                        {tab.label}
+                    </option>
+                ))}
+            </select>
+
+            <div className={styles.container}>
+                {tabs.map(tab => {
+                    const Icon = tab.icon
+                    return (
+                        <button
+                            key={tab.id}
+                            className={`${styles.tab} ${activeTab === tab.id ? styles.active : ''}`}
+                            onClick={() => onTabChange(tab.id)}
+                        >
+                            <Icon size={18} />
+                            <span>{tab.label}</span>
+                        </button>
+                    )
+                })}
+            </div>
+        </>
     )
 }

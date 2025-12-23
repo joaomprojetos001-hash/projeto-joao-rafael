@@ -84,11 +84,11 @@ export default function AdminAgents() {
                     <tbody>
                         {agents.map(agent => (
                             <tr key={agent.id}>
-                                <td><strong>{agent.name}</strong></td>
-                                <td>{agent.totalLeads}</td>
-                                <td>{agent.closedLeads}</td>
-                                <td>{agent.responseTime}</td>
-                                <td>
+                                <td data-label="Agente"><strong>{agent.name}</strong></td>
+                                <td data-label="Leads Ativos">{agent.totalLeads}</td>
+                                <td data-label="Fechados">{agent.closedLeads}</td>
+                                <td data-label="Tempo Resp.">{agent.responseTime}</td>
+                                <td data-label="Ações">
                                     <button
                                         className="btn btn-sm btn-ghost"
                                         onClick={() => {

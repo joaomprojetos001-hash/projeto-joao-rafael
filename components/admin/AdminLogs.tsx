@@ -47,31 +47,27 @@ export default function AdminLogs() {
     return (
         <div className={styles.statCard}>
             <h2>📜 Atividade Recente do Sistema</h2>
-            <div style={{ marginTop: '1rem', border: '1px solid var(--color-border)', borderRadius: '8px', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead style={{ background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)' }}>
+            <div className={styles.tableContainer}>
+                <table className={styles.table}>
+                    <thead>
                         <tr>
-                            <th style={{ padding: '10px', textAlign: 'left', color: 'var(--color-text-secondary)' }}>Data</th>
-                            <th style={{ padding: '10px', textAlign: 'left', color: 'var(--color-text-secondary)' }}>Tipo</th>
-                            <th style={{ padding: '10px', textAlign: 'left', color: 'var(--color-text-secondary)' }}>Mensagem</th>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Mensagem</th>
                         </tr>
                     </thead>
                     <tbody>
                         {logs.map(log => (
-                            <tr key={log.id} style={{ borderBottom: '1px solid var(--color-border-light)' }}>
-                                <td style={{ padding: '10px', fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>
+                            <tr key={log.id}>
+                                <td data-label="Data">
                                     {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                                 </td>
-                                <td style={{ padding: '10px' }}>
-                                    <span style={{
-                                        color: log.type === 'SUCCESS' ? 'var(--color-success)' : 'var(--color-info)',
-                                        fontWeight: 'bold',
-                                        fontSize: '0.8rem'
-                                    }}>
+                                <td data-label="Tipo">
+                                    <span className={log.type === 'SUCCESS' ? styles.badgeSuccess : styles.badgeWarning}>
                                         {log.type}
                                     </span>
                                 </td>
-                                <td style={{ padding: '10px', fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{log.message}</td>
+                                <td data-label="Mensagem">{log.message}</td>
                             </tr>
                         ))}
                     </tbody>

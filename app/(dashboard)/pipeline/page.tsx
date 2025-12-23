@@ -22,9 +22,9 @@ interface Lead {
 
 const COLUMNS = [
     { id: 'em_atendimento', title: 'Em Atendimento', color: '#6366f1' },
+    { id: 'nao_respondido', title: 'Não Respondido', color: '#ef4444' },
     { id: 'em_negociacao', title: 'Em Negociação', color: '#f59e0b' },
-    { id: 'fechado', title: 'Fechado', color: '#10b981' },
-    { id: 'nao_respondido', title: 'Não Respondido', color: '#ef4444' }
+    { id: 'fechado', title: 'Fechado', color: '#10b981' }
 ]
 
 interface Product {

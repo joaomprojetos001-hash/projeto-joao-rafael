@@ -229,4 +229,9 @@
         opacity: 1;
         visibility: visible;
     }
+
+    /* Ensure specific z-index since var might fail in modules if not defined globally */
+    .overlay {
+        z-index: 999;
+    }
 }

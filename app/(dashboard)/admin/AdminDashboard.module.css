@@ -20,17 +20,18 @@
 
 .statsGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    /* Smaller min-width for mobile 2-col */
     gap: 16px;
     margin-bottom: 32px;
 }
 
 .statCard {
-    background: var(--color-surface);
+    background: var(--color-bg-tertiary);
     padding: 20px;
     border-radius: 12px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--color-border-card);
 }
 
 .statCard h3 {
@@ -45,18 +46,48 @@
     color: var(--color-text-primary);
 }
 
+.card {
+    background: var(--color-bg-tertiary);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--color-border-card);
+}
+
+.settingRow {
+    margin-top: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface);
+}
+
+.analyticsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+}
+
 .tableContainer {
     background: var(--color-surface);
     border-radius: 12px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--color-border);
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .table {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
+    min-width: 600px;
+    /* Force scroll on small screens */
 }
 
 .table th {
@@ -67,6 +98,8 @@
     text-transform: uppercase;
     color: var(--color-text-secondary);
     font-weight: 600;
+    white-space: nowrap;
+    /* Prevent headers from wrapping weirdly */
 }
 
 .table td {
@@ -149,4 +182,119 @@
     padding: 2rem;
     text-align: center;
     color: var(--color-text-secondary);
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+        width: 100%;
+        overflow-x: hidden;
+        /* Ensure no horizontal scroll leaks */
+    }
+
+    .subtitle {
+        font-size: 1.1rem;
+        margin: 24px 0 12px;
+    }
+
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+        /* 2 columns on mobile to save space */
+        gap: 12px;
+    }
+
+    .analyticsGrid {
+        grid-template-columns: 1fr;
+        /* Stack analytics cards on mobile */
+        gap: 12px;
+    }
+
+    .statCard {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .settingRow {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .statCard h3 {
+        margin: 0;
+    }
+
+    .statCard p {
+        font-size: 20px;
+        line-height: 1;
+        margin: 0;
+    }
+
+    /* Force Table to behave like Cards */
+    .tableContainer {
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    .table,
+    .table tbody,
+    .table tr,
+    .table td {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .table thead {
+        display: none;
+        /* Hide headers */
+    }
+
+    .table tr {
+        background: var(--color-bg-tertiary);
+        margin-bottom: 16px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--color-border-card);
+        padding: 20px;
+        box-shadow: var(--shadow-card);
+    }
+
+    .table td {
+        padding: 12px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        text-align: left;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .table td:last-child {
+        border-bottom: none;
+        padding-top: 16px;
+        align-items: flex-end;
+    }
+
+    /* Label styling */
+    .table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        font-size: 11px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    /* Adjust specific cells */
+    .actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
 }
