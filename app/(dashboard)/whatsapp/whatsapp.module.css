@@ -20,10 +20,10 @@
 
 .content {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: var(--spacing-xl);
     justify-content: center;
-    max-width: 600px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -89,8 +89,8 @@
 }
 
 .qrContainer {
-    width: 280px;
-    height: 280px;
+    width: 250px;
+    height: 250px;
     background: white;
     padding: var(--spacing-md);
     border-radius: var(--radius-md);
@@ -126,15 +126,28 @@
     cursor: pointer;
     border: none;
     transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 48px;
+    /* Ensure height */
+    position: relative;
+    z-index: 10;
 }
 
 .btnPrimary {
-    background: var(--color-primary);
-    color: white;
+    background: var(--color-gold-primary);
+    /* Fixed: var(--color-primary) did not exist */
+    background: var(--gradient-gold);
+    /* Use gradient if available */
+    color: #000;
+    /* Contrast for gold */
+    box-shadow: 0 4px 6px rgba(218, 165, 32, 0.2);
 }
 
 .btnPrimary:hover {
-    background: var(--color-primary-dark);
+    filter: brightness(1.05);
+    box-shadow: 0 6px 12px rgba(218, 165, 32, 0.3);
 }
 
 .btnSecondary {
@@ -144,7 +157,7 @@
 }
 
 .btnSecondary:hover {
-    border-color: var(--color-text-secondary);
+    border-color: var(--color-gold-primary);
     background: var(--color-surface-hover);
 }
 
@@ -153,18 +166,37 @@
     cursor: not-allowed;
 }
 
+
+.subtitle {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    margin-top: var(--spacing-sm);
+}
+
 @media (max-width: 768px) {
     .container {
         padding: var(--spacing-md);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow-y: auto;
     }
 
     .header h1 {
         font-size: 1.5rem;
     }
 
+    .content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-lg);
+        padding-bottom: var(--spacing-2xl);
+    }
+
     .card {
         padding: var(--spacing-lg);
         width: 100%;
+        min-height: auto;
     }
 
     .actions {
@@ -173,6 +205,6 @@
 
     .qrContainer {
         width: 100%;
-        max-width: 280px;
+        max-width: 250px;
     }
 }
