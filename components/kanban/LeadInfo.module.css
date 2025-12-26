@@ -18,6 +18,29 @@
     margin-bottom: var(--spacing-xl);
     padding-bottom: var(--spacing-lg);
     border-bottom: 1px solid var(--color-border);
+    position: relative;
+}
+
+.closeButton {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.closeButton:hover {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
 }
 
 .avatar {

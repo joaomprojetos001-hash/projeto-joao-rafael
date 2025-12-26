@@ -6,6 +6,7 @@ import styles from './LeadInfo.module.css'
 
 interface LeadInfoProps {
     leadId: string
+    onClose?: () => void
 }
 
 interface Product {
@@ -13,7 +14,7 @@ interface Product {
     nome: string
 }
 
-export default function LeadInfo({ leadId }: LeadInfoProps) {
+export default function LeadInfo({ leadId, onClose }: LeadInfoProps) {
     const [lead, setLead] = useState<any>(null)
     const [products, setProducts] = useState<Product[]>([])
 
@@ -88,6 +89,11 @@ export default function LeadInfo({ leadId }: LeadInfoProps) {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
+                {onClose && (
+                    <button onClick={onClose} className={styles.closeButton} title="Fechar">
+                        ✕
+                    </button>
+                )}
                 <div className={styles.avatar}>
                     {lead.name ? lead.name[0].toUpperCase() : '#'}
                 </div>

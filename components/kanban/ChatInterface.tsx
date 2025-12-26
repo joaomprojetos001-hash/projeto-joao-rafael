@@ -12,6 +12,25 @@ interface Props {
     onBack?: () => void
 }
 
+const cleanMessageContent = (content: string) => {
+    if (!content || !content.startsWith('[Used tools:')) return content;
+
+    let depth = 0;
+    let endIndex = -1;
+
+    for (let i = 0; i < content.length; i++) {
+        if (content[i] === '[') depth++;
+        else if (content[i] === ']') depth--;
+
+        if (depth === 0) {
+            endIndex = i;
+            break;
+        }
+    }
+
+    return endIndex !== -1 ? content.substring(endIndex + 1).trim() : content;
+}
+
 export default function ChatInterface({ leadId, onBack }: Props) {
     const [messages, setMessages] = useState<ChatMessageRow[]>([])
     const [inputValue, setInputValue] = useState('')
@@ -49,6 +68,8 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                 .from('messages')
                 .select('*')
                 .eq('session_id', leadPhone)
+                // Filter to only show conversation items
+                .in('message->>type', ['human', 'ai'])
                 .order('created_at', { ascending: true })
 
             if (data) setMessages(data)
@@ -165,7 +186,7 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                                 className={`${styles.messageWrapper} ${!isHuman ? styles.wrapperAi : styles.wrapperHuman}`}
                             >
                                 <div className={`${styles.bubble} ${!isHuman ? styles.bubbleAi : styles.bubbleHuman}`}>
-                                    <p>{msg.message.content}</p>
+                                    <p>{cleanMessageContent(msg.message.content)}</p>
                                     <span className={styles.timestamp}>
                                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         {isDashboardAgent && <span title="Enviado por atendente"> 👤</span>}
@@ -198,16 +219,7 @@ export default function ChatInterface({ leadId, onBack }: Props) {
             {showLeadInfo && (
                 <div className={styles.modalOverlay} onClick={() => setShowLeadInfo(false)}>
                     <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-                        <button
-                            className={styles.closeModalButton}
-                            onClick={() => setShowLeadInfo(false)}
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
-                        <LeadInfo leadId={leadId} />
+                        <LeadInfo leadId={leadId} onClose={() => setShowLeadInfo(false)} />
                     </div>
                 </div>
             )}
