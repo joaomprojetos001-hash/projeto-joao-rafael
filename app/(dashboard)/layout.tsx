@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/MobileHeader'
+import { CompanyProvider } from '@/context/CompanyContext'
 import styles from './dashboard-layout.module.css'
 
 export default function DashboardLayout({
@@ -14,19 +15,21 @@ export default function DashboardLayout({
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
     return (
-        <div className={styles.dashboardContainer}>
-            <MobileHeader onMenuClick={() => setIsSidebarOpen(true)} />
-            <Sidebar
-                isOpen={isSidebarOpen}
-                onClose={() => setIsSidebarOpen(false)}
-                onCollapse={setIsSidebarCollapsed}
-            />
-            <main
-                className={`${styles.mainContent} ${isSidebarCollapsed ? styles.collapsed : ''}`}
-            >
-                {children}
-            </main>
-        </div>
+        <CompanyProvider>
+            <div className={styles.dashboardContainer}>
+                <MobileHeader onMenuClick={() => setIsSidebarOpen(true)} />
+                <Sidebar
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
+                    onCollapse={setIsSidebarCollapsed}
+                />
+                <main
+                    className={`${styles.mainContent} ${isSidebarCollapsed ? styles.collapsed : ''}`}
+                >
+                    {children}
+                </main>
+            </div>
+        </CompanyProvider>
     )
 }
 

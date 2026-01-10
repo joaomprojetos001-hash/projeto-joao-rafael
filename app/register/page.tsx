@@ -9,6 +9,7 @@ import styles from '../login/login.module.css' // Reuse login styles
 interface Product {
     id: string
     nome: string
+    company_tag: string
 }
 
 export default function RegisterPage() {
@@ -18,6 +19,7 @@ export default function RegisterPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+    const [selectedCompanies, setSelectedCompanies] = useState<string[]>(['PSC_TS']) // Default to PSC_TS
     const [availableProducts, setAvailableProducts] = useState<Product[]>([])
 
     const [loading, setLoading] = useState(false)
@@ -29,7 +31,7 @@ export default function RegisterPage() {
             const supabase = createClient()
             const { data } = await supabase
                 .from('produtos')
-                .select('id, nome')
+                .select('id, nome, company_tag')
                 .order('nome')
 
             if (data) setAvailableProducts(data)
@@ -58,7 +60,7 @@ export default function RegisterPage() {
             const supabase = createClient()
 
             // 1. Sign Up
-            // We pass products in metadata so the server-side trigger handles insertion.
+            // We pass products and companies in metadata so the server-side trigger handles insertion.
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
@@ -66,7 +68,8 @@ export default function RegisterPage() {
                     data: {
                         name,
                         phone,
-                        products: selectedProducts // Pass array of IDs
+                        products: selectedProducts, // Pass array of IDs
+                        companies: selectedCompanies // Pass array of tags
                     }
                 }
             })
@@ -178,23 +181,58 @@ export default function RegisterPage() {
 
                     <div className={styles.inputGroup}>
                         <label style={{ marginBottom: '10px', display: 'block' }}>
+                            Acesso a Empresas <span style={{ color: 'red' }}>*</span>
+                        </label>
+                        <div style={{
+                            display: 'flex', gap: '15px',
+                            padding: '10px', border: '1px solid #333', borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.2)'
+                        }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: 'white' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedCompanies.includes('PSC_TS')}
+                                    onChange={(e) => {
+                                        const val = 'PSC_TS';
+                                        setSelectedCompanies(prev => e.target.checked ? [...prev, val] : prev.filter(v => v !== val))
+                                    }}
+                                />
+                                PSC Consulting + TS
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: 'white' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedCompanies.includes('PSC_CONSORCIOS')}
+                                    onChange={(e) => {
+                                        const val = 'PSC_CONSORCIOS';
+                                        setSelectedCompanies(prev => e.target.checked ? [...prev, val] : prev.filter(v => v !== val))
+                                    }}
+                                />
+                                PSC Consórcios
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                        <label style={{ marginBottom: '10px', display: 'block' }}>
                             Produtos de Responsabilidade <span style={{ color: 'red' }}>*</span>
                         </label>
                         <div style={{
                             display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px',
-                            maxHeight: '200px', overflowY: 'auto', border: '1px solid #eee', padding: '10px', borderRadius: '8px'
+                            maxHeight: '200px', overflowY: 'auto', border: '1px solid #333', padding: '10px', borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.2)'
                         }}>
-                            {availableProducts.map(product => (
-                                <label key={product.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedProducts.includes(product.id)}
-                                        onChange={() => handleProductToggle(product.id)}
-                                        disabled={loading}
-                                    />
-                                    {product.nome}
-                                </label>
-                            ))}
+                            {availableProducts
+                                .filter(p => selectedCompanies.includes(p.company_tag))
+                                .map(product => (
+                                    <label key={product.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedProducts.includes(product.id)}
+                                            onChange={() => handleProductToggle(product.id)}
+                                            disabled={loading}
+                                        />
+                                        {product.nome}
+                                    </label>
+                                ))}
                             {availableProducts.length === 0 && (
                                 <p style={{ fontSize: '12px', color: '#666' }}>Nenhum produto encontrado...</p>
                             )}

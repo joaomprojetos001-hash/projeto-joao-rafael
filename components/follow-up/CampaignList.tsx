@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import styles from './CampaignList.module.css'
+import { useCompany } from '@/context/CompanyContext'
 
 interface Campaign {
     id: string
@@ -21,20 +22,28 @@ export default function CampaignList() {
     const [loading, setLoading] = useState(true)
     const [selectedId, setSelectedId] = useState<string | null>(null)
 
+    const { selectedCompany } = useCompany()
+
     useEffect(() => {
         const fetchCampaigns = async () => {
             const supabase = createClient()
-            const { data } = await supabase
+            let query = supabase
                 .from('campanhas')
                 .select('*')
                 .order('created_at', { ascending: false })
+
+            if (selectedCompany !== 'ALL') {
+                query = query.eq('company_tag', selectedCompany)
+            }
+
+            const { data } = await query
 
             if (data) setCampaigns(data)
             setLoading(false)
         }
 
         fetchCampaigns()
-    }, [])
+    }, [selectedCompany])
 
     const toggleStatus = async (id: string, currentStatus: boolean) => {
         // Optimistic update

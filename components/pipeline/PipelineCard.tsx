@@ -32,7 +32,21 @@ export default function PipelineCard({ lead, products, onDragStart, onView, onMo
             onDragStart={(e) => onDragStart(e, lead.id)}
         >
             <div className={styles.header}>
-                <span className={styles.name}>{lead.name || lead.phone}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span className={styles.name}>{lead.name || lead.phone}</span>
+                    {lead.company_tag && (
+                        <span style={{
+                            fontSize: '0.65rem',
+                            padding: '2px 4px',
+                            borderRadius: '4px',
+                            backgroundColor: lead.company_tag === 'PSC_CONSORCIOS' ? '#10b981' : '#d4af37',
+                            color: 'white',
+                            fontWeight: 'bold'
+                        }}>
+                            {lead.company_tag === 'PSC_CONSORCIOS' ? 'PSCC' : 'PSC+TS'}
+                        </span>
+                    )}
+                </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
                     {lead.is_blocked && <span style={{ fontSize: '10px', background: '#ef4444', color: 'white', padding: '2px 4px', borderRadius: '4px' }}>🚫</span>}
                     {lead.is_urgent && <span className={styles.urgent}>!!!</span>}

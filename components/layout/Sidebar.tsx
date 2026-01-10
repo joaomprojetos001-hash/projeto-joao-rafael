@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import styles from './Sidebar.module.css'
 import { LayoutDashboard, Kanban, GitPullRequest, MessageSquare, Phone, LogOut, ChevronLeft, ChevronRight, Settings } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { CompanyFilter } from './CompanyFilter'
 
 const baseMenuItems = [
     { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={20} /> },
@@ -124,6 +125,10 @@ export function Sidebar({ isOpen = false, onClose, onCollapse }: SidebarProps) {
                             <span className={styles.companySubtitle}>CONSULTORIA</span>
                         </div>
                     )}
+                </div>
+
+                <div style={{ padding: '0 12px 12px 12px' }}>
+                    <CompanyFilter />
                 </div>
 
                 <nav className={styles.nav}>

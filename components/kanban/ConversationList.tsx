@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import styles from './ConversationList.module.css'
+import { useCompany } from '@/context/CompanyContext'
 
 interface Lead {
     id: string
@@ -15,6 +16,7 @@ interface Lead {
     is_urgent: boolean
     updated_at: string
     atendente_responsavel?: string
+    company_tag?: string
 }
 
 interface Props {
@@ -29,6 +31,8 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState('all') // all, urgent, active
     const [searchTerm, setSearchTerm] = useState('')
+
+    const { selectedCompany } = useCompany()
 
     useEffect(() => {
         const fetchLeads = async () => {
@@ -63,10 +67,17 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
             }
 
             // 3. Fetch Leads
-            const { data, error } = await supabase
+            let query = supabase
                 .from('leads')
                 .select('*')
                 .order('updated_at', { ascending: false })
+
+            // Removed Global Company Filter to showing all leads in Kanban regardless of Dashboard selection
+            // if (selectedCompany !== 'ALL') {
+            //    query = query.eq('company_tag', selectedCompany)
+            // }
+
+            const { data, error } = await query
 
             if (data) {
                 // 4. Apply Access Control Filter
@@ -106,7 +117,7 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
         return () => {
             supabase.removeChannel(channel)
         }
-    }, [])
+    }, []) // Removed selectedCompany dependency
 
     const filteredLeads = leads.filter(lead => {
         // Search Filter
@@ -184,6 +195,18 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
                             <div className={styles.leadInfo}>
                                 <div className={styles.leadHeader}>
                                     <span className={styles.leadName}>{lead.name || lead.phone}</span>
+                                    {lead.company_tag && (
+                                        <span style={{
+                                            fontSize: '0.65rem',
+                                            padding: '2px 4px',
+                                            borderRadius: '4px',
+                                            backgroundColor: lead.company_tag === 'PSC_CONSORCIOS' ? '#10b981' : '#d4af37',
+                                            color: 'white',
+                                            marginLeft: '6px'
+                                        }}>
+                                            {lead.company_tag === 'PSC_CONSORCIOS' ? 'PSCC' : 'PSC+TS'}
+                                        </span>
+                                    )}
                                 </div>
                                 {lead.atendente_responsavel && (
                                     <span style={{ fontSize: '0.75rem', color: '#6366f1', display: 'block', marginBottom: '2px' }}>

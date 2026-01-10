@@ -8,19 +8,28 @@ interface WhatsAppInstance {
     id: number
     instance_name: string
     is_connected: boolean
+    company_tag?: string
+}
+
+interface WhatsAppConnectionCardProps {
+    id: number
+    instanceName: string
+    initialStatus: boolean
+    companyTag: string
+    isLocked: boolean // If true, cannot change company (Lines 1 & 2)
+    onStatusChange: (id: number, status: boolean) => void
+    onCompanyChange: (id: number, tag: string) => void
 }
 
 function WhatsAppConnectionCard({
     id,
     instanceName,
     initialStatus,
-    onStatusChange
-}: {
-    id: number
-    instanceName: string
-    initialStatus: boolean
-    onStatusChange: (id: number, status: boolean) => void
-}) {
+    companyTag,
+    isLocked,
+    onStatusChange,
+    onCompanyChange
+}: WhatsAppConnectionCardProps) {
     const [qrCode, setQrCode] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
     const status = initialStatus ? 'connected' : 'disconnected'
@@ -38,7 +47,8 @@ function WhatsAppConnectionCard({
                 },
                 body: JSON.stringify({
                     action: 'qr_code',
-                    instance_name: instanceName // Sending the instance name to the webhook
+                    instance_name: instanceName,
+                    company_tag: companyTag // Sending company tag to webhook
                 })
             })
 
@@ -59,6 +69,47 @@ function WhatsAppConnectionCard({
     return (
         <div className={styles.card}>
             <h3>{instanceName}</h3>
+
+            <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#888' }}>
+                    Empresa Associada:
+                </label>
+                {isLocked ? (
+                    <div style={{
+                        padding: '8px',
+                        background: companyTag === 'PSC_TS' ? 'var(--color-gold)' : '#10b981',
+                        color: companyTag === 'PSC_TS' ? 'black' : 'white',
+                        borderRadius: '4px',
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        fontSize: '14px'
+                    }}>
+                        {companyTag === 'PSC_TS' ? 'PSC+TS' : 'PSC Consórcios'}
+                        <span style={{ display: 'block', fontSize: '10px', fontWeight: 'normal', opacity: 0.8 }}>
+                            (Fixa)
+                        </span>
+                    </div>
+                ) : (
+                    <select
+                        value={companyTag}
+                        onChange={(e) => onCompanyChange(id, e.target.value)}
+                        style={{
+                            width: '100%',
+                            padding: '8px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--color-border)',
+                            background: companyTag === 'PSC_TS' ? 'var(--color-gold)' : '#10b981',
+                            color: companyTag === 'PSC_TS' ? 'black' : 'white',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <option value="PSC_TS" style={{ color: 'black' }}>PSC+TS</option>
+                        <option value="PSC_CONSORCIOS" style={{ color: 'black' }}>PSC Consórcios</option>
+                    </select>
+                )}
+            </div>
+
             <div className={`${styles.statusIndicator} ${status === 'connected' ? styles.connected : styles.disconnected}`}>
                 <span className={styles.pulse}></span>
                 {status === 'connected' ? 'Conectado' : 'Desconectado'}
@@ -135,11 +186,29 @@ export default function WhatsAppPage() {
         }
     }
 
+    const handleCompanyChange = async (id: number, tag: string) => {
+        // Optimistic update
+        setInstances(prev => prev.map(inst =>
+            inst.id === id ? { ...inst, company_tag: tag } : inst
+        ))
+
+        const { error } = await supabase
+            .from('whatsapp_instances')
+            .update({ company_tag: tag })
+            .eq('id', id)
+
+        if (error) {
+            console.error('Error updating company tag:', error)
+            // Revert or fetch? Fetching is safer
+            fetchInstances()
+        }
+    }
+
     // Initialize with 3 placeholders if fetch fails or is empty initially (should match SQL seed)
     const displayInstances = instances.length > 0 ? instances : [
-        { id: 1, instance_name: 'Linha 1', is_connected: false },
-        { id: 2, instance_name: 'Linha 2', is_connected: false },
-        { id: 3, instance_name: 'Linha 3', is_connected: false },
+        { id: 1, instance_name: 'Linha 1', is_connected: false, company_tag: 'PSC_TS' },
+        { id: 2, instance_name: 'Linha 2', is_connected: false, company_tag: 'PSC_CONSORCIOS' },
+        { id: 3, instance_name: 'Linha 3', is_connected: false, company_tag: 'PSC_TS' },
     ]
 
     return (
@@ -157,9 +226,12 @@ export default function WhatsAppPage() {
                         id={instance.id}
                         instanceName={instance.instance_name}
                         initialStatus={instance.is_connected}
+                        companyTag={instance.company_tag || 'PSC_TS'}
+                        isLocked={instance.id === 1 || instance.id === 2} // Lock lines 1 and 2
                         onStatusChange={(id, status) => {
                             // Optimistic update if needed, but we rely on realtime/re-fetch or parent state
                         }}
+                        onCompanyChange={handleCompanyChange}
                     />
                 ))}
             </div>

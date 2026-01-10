@@ -1,6 +1,7 @@
 'use client'
 
 import styles from '@/app/(dashboard)/dashboard-layout.module.css'
+import { CompanyFilter } from './CompanyFilter'
 
 interface MobileHeaderProps {
     onMenuClick: () => void
@@ -22,6 +23,9 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
             </button>
             <div className={styles.mobileBrand}>
                 <span className={styles.brandText}>Leads Dashboard</span>
+            </div>
+            <div style={{ marginLeft: 'auto', marginRight: '8px' }}>
+                <CompanyFilter />
             </div>
         </header>
     )

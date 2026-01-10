@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import styles from './dashboard.module.css'
+import { useCompany } from '@/context/CompanyContext'
 
 interface DashboardMetrics {
     totalLeads: number
@@ -20,6 +21,7 @@ interface Lead {
     status: string
     is_urgent: boolean
     created_at: string
+    company_tag?: string
 }
 
 export default function DashboardPage() {
@@ -40,6 +42,8 @@ export default function DashboardPage() {
         fechado: 0
     })
     const [debugInfo, setDebugInfo] = useState<any>(null)
+
+    const { selectedCompany, setCompany } = useCompany()
 
     useEffect(() => {
         const fetchData = async () => {
@@ -78,12 +82,19 @@ export default function DashboardPage() {
 
             // Helper to apply filters
             const applyFilter = (query: any) => {
+                // Product Filter (Legacy/Agent-specific)
                 if (!isAdmin && productIds && productIds.length > 0) {
-                    return query.in('produto_interesse', productIds)
+                    query = query.in('produto_interesse', productIds)
                 } else if (!isAdmin && (!productIds || productIds.length === 0)) {
                     // Agent with no products -> return empty/impossible
-                    return query.eq('id', '00000000-0000-0000-0000-000000000000')
+                    query = query.eq('id', '00000000-0000-0000-0000-000000000000')
                 }
+
+                // Company Filter [NEW]
+                if (selectedCompany !== 'ALL') {
+                    query = query.eq('company_tag', selectedCompany)
+                }
+
                 return query
             }
 
@@ -114,7 +125,7 @@ export default function DashboardPage() {
             const { data: urgents } = await queryUrgents
 
             // 5. Pipeline Stats
-            let queryPipeline = supabase.from('leads').select('status, produto_interesse')
+            let queryPipeline = supabase.from('leads').select('status, produto_interesse') // Removed produto_interesse if not used, keep for checking?
             queryPipeline = applyFilter(queryPipeline)
             const { data: allLeads } = await queryPipeline
 
@@ -148,7 +159,7 @@ export default function DashboardPage() {
         }
 
         fetchData()
-    }, [])
+    }, [selectedCompany])
 
     if (loading) return <div className={styles.loading}>Carregando dashboard...</div>
 
@@ -158,6 +169,44 @@ export default function DashboardPage() {
                 <div>
                     <h1>Dashboard</h1>
                     <p className="text-secondary">Visão geral em tempo real</p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                        className="btn"
+                        style={{
+                            backgroundColor: selectedCompany === 'PSC_TS' ? 'var(--color-gold)' : 'transparent',
+                            color: selectedCompany === 'PSC_TS' ? 'black' : 'var(--color-text-secondary)',
+                            border: '1px solid var(--color-border)',
+                            fontWeight: selectedCompany === 'PSC_TS' ? 'bold' : 'normal'
+                        }}
+                        onClick={() => setCompany('PSC_TS')}
+                    >
+                        PSC+TS
+                    </button>
+                    <button
+                        className="btn"
+                        style={{
+                            backgroundColor: selectedCompany === 'PSC_CONSORCIOS' ? '#10b981' : 'transparent',
+                            color: selectedCompany === 'PSC_CONSORCIOS' ? 'white' : 'var(--color-text-secondary)',
+                            border: '1px solid var(--color-border)',
+                            fontWeight: selectedCompany === 'PSC_CONSORCIOS' ? 'bold' : 'normal'
+                        }}
+                        onClick={() => setCompany('PSC_CONSORCIOS')}
+                    >
+                        PSC Consórcios
+                    </button>
+                    <button
+                        className="btn"
+                        style={{
+                            backgroundColor: selectedCompany === 'ALL' ? '#6366f1' : 'transparent',
+                            color: selectedCompany === 'ALL' ? 'white' : 'var(--color-text-secondary)',
+                            border: '1px solid var(--color-border)',
+                            fontWeight: selectedCompany === 'ALL' ? 'bold' : 'normal'
+                        }}
+                        onClick={() => setCompany('ALL')}
+                    >
+                        Todos
+                    </button>
                 </div>
             </header>
 

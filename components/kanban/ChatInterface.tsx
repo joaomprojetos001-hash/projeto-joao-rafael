@@ -36,6 +36,7 @@ export default function ChatInterface({ leadId, onBack }: Props) {
     const [inputValue, setInputValue] = useState('')
     const [leadPhone, setLeadPhone] = useState<string>('')
     const [leadName, setLeadName] = useState<string>('')
+    const [companyTag, setCompanyTag] = useState<string>('')
     const [loading, setLoading] = useState(true)
     const [showLeadInfo, setShowLeadInfo] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -46,13 +47,14 @@ export default function ChatInterface({ leadId, onBack }: Props) {
             const supabase = createClient()
             const { data } = await supabase
                 .from('leads')
-                .select('phone, name')
+                .select('phone, name, company_tag')
                 .eq('id', leadId)
                 .single()
 
             if (data) {
                 setLeadPhone(data.phone)
                 setLeadName(data.name)
+                setCompanyTag(data.company_tag || 'PSC_TS') // Default if empty
             }
         }
         fetchLeadData()
@@ -130,7 +132,12 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                 body: JSON.stringify({
                     message: inputValue,
                     lead_id: leadId,
-                    phone: leadPhone
+                    phone: leadPhone,
+                    company_tag: companyTag,
+                    // Line Identification Logic:
+                    // Line 1 = PSC_TS
+                    // Line 2 = PSC_CONSORCIOS
+                    line_id: companyTag === 'PSC_TS' ? '1' : companyTag === 'PSC_CONSORCIOS' ? '2' : '3'
                 })
             }).catch(err => console.error('Erro no webhook N8N:', err))
 
