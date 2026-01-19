@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import styles from './CreateCampaignModal.module.css'
 
+import { useCompany } from '@/context/CompanyContext'
+
 interface Props {
     onClose: () => void
     onSuccess: () => void
@@ -18,19 +20,64 @@ export default function CreateCampaignModal({ onClose, onSuccess }: Props) {
         tempo_disparo: '',
         segmento: 'nao_fechados',
         product_id: '',
+        whatsapp_instance_id: '',
         is_recurrent: false,
         recurrence_period: 3 // Default 3 dias
     })
 
-    // Fetch Products
+    // Separate state for date and time to control UI
+    const [datePart, setDatePart] = useState('')
+    const [timePart, setTimePart] = useState('09:00')
+
+    // Available WhatsApp instances
+    const [instances, setInstances] = useState<any[]>([])
+
+    const { selectedCompany } = useCompany()
+
+    // Fetch Products filtered by company
     useEffect(() => {
         const fetchProducts = async () => {
             const supabase = createClient()
-            const { data } = await supabase.from('produtos').select('id, nome').eq('is_active', true)
+            let query = supabase.from('produtos').select('id, nome').eq('is_active', true)
+
+            // Filter by company_tag
+            if (selectedCompany !== 'ALL') {
+                query = query.eq('company_tag', selectedCompany)
+            }
+
+            const { data } = await query
             if (data) setProducts(data)
         }
         fetchProducts()
+    }, [selectedCompany])
+
+    // Fetch WhatsApp Instances
+    useEffect(() => {
+        const fetchInstances = async () => {
+            const supabase = createClient()
+            const { data } = await supabase.from('whatsapp_instances').select('id, instance_name, is_connected').order('id')
+            if (data) setInstances(data)
+        }
+        fetchInstances()
     }, [])
+
+    // Filter instances based on selected company
+    const getFilteredInstances = () => {
+        if (!instances.length) return []
+
+        // Linha 1 = PSC+TS (ID 1)
+        // Linha 2 = PSC Consórcios (ID 2)
+        // Linha 3 = Extra (ID 3)
+
+        switch (selectedCompany) {
+            case 'PSC_TS':
+                return instances.filter(i => i.id === 1 || i.id === 3)
+            case 'PSC_CONSORCIOS':
+                return instances.filter(i => i.id === 2 || i.id === 3)
+            default:
+                return instances // Show all if ALL or unselected
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -43,6 +90,7 @@ export default function CreateCampaignModal({ onClose, onSuccess }: Props) {
             // Payload Webhook Atualizado
             const payload = {
                 ...formData,
+                company_tag: selectedCompany === 'ALL' ? 'PSC_TS' : selectedCompany, // Default to PSC_TS if ALL
                 product_status: formData.product_id ? 'product-true' : 'product-false',
                 product_id: formData.product_id || null
             }
@@ -60,7 +108,11 @@ export default function CreateCampaignModal({ onClose, onSuccess }: Props) {
 
         const { error } = await supabase
             .from('campanhas')
-            .insert(formData)
+            .insert({
+                ...formData,
+                company_tag: selectedCompany === 'ALL' ? 'PSC_TS' : selectedCompany, // Default to PSC_TS if ALL
+                product_id: formData.product_id || null
+            })
 
         if (!error) {
             onSuccess()
@@ -105,29 +157,76 @@ export default function CreateCampaignModal({ onClose, onSuccess }: Props) {
                     </div>
 
                     <div className={styles.row}>
-                        <div className={styles.field}>
-                            <label>Dispara em:</label>
+                        <div className={styles.field} style={{ flex: 2 }}>
+                            <label>Data do Disparo</label>
                             <input
-                                type="datetime-local"
+                                type="date"
                                 className="input"
-                                value={formData.tempo_disparo}
-                                onChange={e => setFormData({ ...formData, tempo_disparo: e.target.value })}
+                                value={datePart}
+                                onChange={e => {
+                                    setDatePart(e.target.value)
+                                    if (e.target.value && timePart) {
+                                        setFormData({ ...formData, tempo_disparo: `${e.target.value}T${timePart}` })
+                                    }
+                                }}
                                 required
                             />
                         </div>
 
-                        <div className={styles.field}>
-                            <label>Segmento Alvo</label>
+                        <div className={styles.field} style={{ flex: 1 }}>
+                            <label>Horário</label>
                             <select
                                 className="input"
-                                value={formData.segmento}
-                                onChange={e => setFormData({ ...formData, segmento: e.target.value })}
+                                value={timePart}
+                                onChange={e => {
+                                    setTimePart(e.target.value)
+                                    if (datePart && e.target.value) {
+                                        setFormData({ ...formData, tempo_disparo: `${datePart}T${e.target.value}` })
+                                    }
+                                }}
+                                required
                             >
-                                <option value="nao_fechados">Não Fechados</option>
-                                <option value="fechados">Fechados</option>
-                                <option value="todos">Todos</option>
+                                {Array.from({ length: 48 }).map((_, i) => {
+                                    const hours = Math.floor(i / 2).toString().padStart(2, '0')
+                                    const minutes = (i % 2 === 0 ? '00' : '30')
+                                    const time = `${hours}:${minutes}`
+                                    return <option key={time} value={time}>{time}</option>
+                                })}
                             </select>
                         </div>
+                    </div>
+
+                    <div className={styles.field}>
+                        <label>Segmento Alvo</label>
+                        <select
+                            className="input"
+                            value={formData.segmento}
+                            onChange={e => setFormData({ ...formData, segmento: e.target.value })}
+                        >
+                            <option value="nao_fechados">Não Fechados</option>
+                            <option value="fechados">Fechados</option>
+                            <option value="todos">Todos</option>
+                        </select>
+                    </div>
+
+                    <div className={styles.field}>
+                        <label>Linha de Disparo</label>
+                        <select
+                            className="input"
+                            value={formData.whatsapp_instance_id}
+                            onChange={e => setFormData({ ...formData, whatsapp_instance_id: e.target.value })}
+                            required
+                        >
+                            <option value="">-- Selecione uma Linha --</option>
+                            {getFilteredInstances().map(inst => (
+                                <option key={inst.id} value={inst.id}>
+                                    {inst.instance_name} {inst.id === 3 ? '(Extra)' : ''}
+                                </option>
+                            ))}
+                        </select>
+                        <p style={{ fontSize: '0.75rem', color: '#eab308', marginTop: '4px' }}>
+                            ⚠️ Certifique-se de que a linha selecionada esteja conectada antes de criar a campanha.
+                        </p>
                     </div>
 
                     <div className={styles.field}>

@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import styles from './dashboard.module.css'
 import { useCompany } from '@/context/CompanyContext'
 
+type TimePeriod = 'today' | 'yesterday' | '7days' | '15days' | '1month' | 'custom'
+
 interface DashboardMetrics {
     totalLeads: number
     leadsToday: number
@@ -24,6 +26,74 @@ interface Lead {
     company_tag?: string
 }
 
+// Helper function to calculate date ranges
+function getDateRange(period: TimePeriod, customStart?: string, customEnd?: string): { start: string; end: string } {
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+
+    switch (period) {
+        case 'today':
+            return {
+                start: todayStart.toISOString(),
+                end: todayEnd.toISOString()
+            }
+        case 'yesterday': {
+            const yesterdayStart = new Date(todayStart)
+            yesterdayStart.setDate(yesterdayStart.getDate() - 1)
+            const yesterdayEnd = new Date(todayStart)
+            yesterdayEnd.setMilliseconds(-1)
+            return {
+                start: yesterdayStart.toISOString(),
+                end: yesterdayEnd.toISOString()
+            }
+        }
+        case '7days': {
+            const weekAgo = new Date(todayStart)
+            weekAgo.setDate(weekAgo.getDate() - 7)
+            return {
+                start: weekAgo.toISOString(),
+                end: todayEnd.toISOString()
+            }
+        }
+        case '15days': {
+            const fifteenDaysAgo = new Date(todayStart)
+            fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15)
+            return {
+                start: fifteenDaysAgo.toISOString(),
+                end: todayEnd.toISOString()
+            }
+        }
+        case '1month': {
+            const monthAgo = new Date(todayStart)
+            monthAgo.setDate(monthAgo.getDate() - 30)
+            return {
+                start: monthAgo.toISOString(),
+                end: todayEnd.toISOString()
+            }
+        }
+        case 'custom':
+            if (customStart && customEnd) {
+                return {
+                    start: new Date(customStart).toISOString(),
+                    end: new Date(customEnd + 'T23:59:59.999Z').toISOString()
+                }
+            }
+            // Fallback to last 30 days if no custom range
+            const fallbackStart = new Date(todayStart)
+            fallbackStart.setDate(fallbackStart.getDate() - 30)
+            return {
+                start: fallbackStart.toISOString(),
+                end: todayEnd.toISOString()
+            }
+        default:
+            return {
+                start: todayStart.toISOString(),
+                end: todayEnd.toISOString()
+            }
+    }
+}
+
 export default function DashboardPage() {
     const router = useRouter()
     const [loading, setLoading] = useState(true)
@@ -39,15 +109,20 @@ export default function DashboardPage() {
         atendimento: 0,
         nao_respondido: 0,
         negociacao: 0,
-        fechado: 0
+        fechado: 0,
+        venda_perdida: 0
     })
-    const [debugInfo, setDebugInfo] = useState<any>(null)
 
     const { selectedCompany, setCompany } = useCompany()
 
+    // Time period state
+    const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('today')
+    const [customStartDate, setCustomStartDate] = useState<string>('')
+    const [customEndDate, setCustomEndDate] = useState<string>('')
+
     useEffect(() => {
         const fetchData = async () => {
-            console.log("Dashboard: Starting fetch...")
+            setLoading(true)
             const supabase = createClient()
 
             // 1. Get User Profile & Role
@@ -66,7 +141,6 @@ export default function DashboardPage() {
                 if (profile?.role === 'admin') {
                     isAdmin = true
                 } else {
-                    // Fetch assigned products
                     const { data: products } = await supabase
                         .from('user_products')
                         .select('product_id')
@@ -78,42 +152,49 @@ export default function DashboardPage() {
                 }
             }
 
-            const today = new Date().toISOString().split('T')[0]
+            // Get date range based on selected period
+            const dateRange = getDateRange(selectedPeriod, customStartDate, customEndDate)
 
-            // Helper to apply filters
-            const applyFilter = (query: any) => {
-                // Product Filter (Legacy/Agent-specific)
+            // Helper to apply filters (company + product + date)
+            const applyFilter = (query: any, applyDateFilter = true) => {
+                // Product Filter
                 if (!isAdmin && productIds && productIds.length > 0) {
                     query = query.in('produto_interesse', productIds)
                 } else if (!isAdmin && (!productIds || productIds.length === 0)) {
-                    // Agent with no products -> return empty/impossible
                     query = query.eq('id', '00000000-0000-0000-0000-000000000000')
                 }
 
-                // Company Filter [NEW]
+                // Company Filter
                 if (selectedCompany !== 'ALL') {
                     query = query.eq('company_tag', selectedCompany)
+                }
+
+                // Date Filter based on updated_at
+                if (applyDateFilter) {
+                    query = query.gte('updated_at', dateRange.start)
+                    query = query.lte('updated_at', dateRange.end)
                 }
 
                 return query
             }
 
-            // 1. Total Leads
+            // 1. Total Leads (filtered by period)
             let queryTotal = supabase.from('leads').select('*', { count: 'exact', head: true })
             queryTotal = applyFilter(queryTotal)
             const { count: totalLeads } = await queryTotal
 
-            // 2. Leads Hoje
+            // 2. Leads created today (always today, not affected by period filter)
+            const today = new Date().toISOString().split('T')[0]
             let queryToday = supabase.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', today)
-            queryToday = applyFilter(queryToday)
+            queryToday = applyFilter(queryToday, false) // No date filter on update_status_at for this
             const { count: leadsToday } = await queryToday
 
-            // 3. Fechados
+            // 3. Fechados (filtered by period)
             let queryClosed = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'fechado')
             queryClosed = applyFilter(queryClosed)
             const { count: closedTotal } = await queryClosed
 
-            // 4. Leads Urgentes (Top 3)
+            // 4. Leads Urgentes (Top 3, not affected by period filter)
             let queryUrgents = supabase
                 .from('leads')
                 .select('*')
@@ -121,11 +202,11 @@ export default function DashboardPage() {
                 .neq('status', 'em_atendimento')
                 .order('updated_at', { ascending: false })
                 .limit(3)
-            queryUrgents = applyFilter(queryUrgents)
+            queryUrgents = applyFilter(queryUrgents, false)
             const { data: urgents } = await queryUrgents
 
-            // 5. Pipeline Stats
-            let queryPipeline = supabase.from('leads').select('status, produto_interesse') // Removed produto_interesse if not used, keep for checking?
+            // 5. Pipeline Stats (filtered by period)
+            let queryPipeline = supabase.from('leads').select('status')
             queryPipeline = applyFilter(queryPipeline)
             const { data: allLeads } = await queryPipeline
 
@@ -133,7 +214,8 @@ export default function DashboardPage() {
                 atendimento: 0,
                 nao_respondido: 0,
                 negociacao: 0,
-                fechado: 0
+                fechado: 0,
+                venda_perdida: 0
             }
 
             if (allLeads) {
@@ -142,6 +224,7 @@ export default function DashboardPage() {
                     if (l.status === 'nao_respondido') stats.nao_respondido++
                     if (l.status === 'em_negociacao') stats.negociacao++
                     if (l.status === 'fechado') stats.fechado++
+                    if (l.status === 'venda_perdida') stats.venda_perdida++
                 })
             }
 
@@ -159,7 +242,16 @@ export default function DashboardPage() {
         }
 
         fetchData()
-    }, [selectedCompany])
+    }, [selectedCompany, selectedPeriod, customStartDate, customEndDate])
+
+    const periodLabels: Record<TimePeriod, string> = {
+        'today': 'Hoje',
+        'yesterday': 'Ontem',
+        '7days': '7 dias',
+        '15days': '15 dias',
+        '1month': '1 mês',
+        'custom': 'Personalizado'
+    }
 
     if (loading) return <div className={styles.loading}>Carregando dashboard...</div>
 
@@ -210,6 +302,44 @@ export default function DashboardPage() {
                 </div>
             </header>
 
+            {/* Time Period Filter */}
+            <section className={styles.timeFilterSection}>
+                <div className={styles.timeFilterContainer}>
+                    {(['today', 'yesterday', '7days', '15days', '1month', 'custom'] as TimePeriod[]).map((period) => (
+                        <button
+                            key={period}
+                            className={`${styles.timeFilterButton} ${selectedPeriod === period ? styles.timeFilterActive : ''}`}
+                            onClick={() => setSelectedPeriod(period)}
+                        >
+                            {periodLabels[period]}
+                        </button>
+                    ))}
+                </div>
+
+                {selectedPeriod === 'custom' && (
+                    <div className={styles.customDatePicker}>
+                        <div className={styles.dateInputGroup}>
+                            <label>De:</label>
+                            <input
+                                type="date"
+                                value={customStartDate}
+                                onChange={(e) => setCustomStartDate(e.target.value)}
+                                className={styles.dateInput}
+                            />
+                        </div>
+                        <div className={styles.dateInputGroup}>
+                            <label>Até:</label>
+                            <input
+                                type="date"
+                                value={customEndDate}
+                                onChange={(e) => setCustomEndDate(e.target.value)}
+                                className={styles.dateInput}
+                            />
+                        </div>
+                    </div>
+                )}
+            </section>
+
             {/* Área de Leads Urgentes */}
             <section className={styles.urgentSection}>
                 <div className={styles.sectionHeader}>
@@ -241,14 +371,11 @@ export default function DashboardPage() {
                                     className="btn btn-primary"
                                     style={{ marginTop: 'var(--spacing-md)', width: '100%', background: '#FF8A80', borderColor: '#FF8A80' }}
                                     onClick={async () => {
-                                        // Update lead status to em_atendimento
                                         const supabase = createClient()
                                         await supabase
                                             .from('leads')
                                             .update({ status: 'em_atendimento' })
                                             .eq('id', lead.id)
-
-                                        // Navigate to kanban
                                         router.push(`/kanban?leadId=${lead.id}`)
                                     }}
                                 >
@@ -264,7 +391,7 @@ export default function DashboardPage() {
             <section className={styles.metricsSection}>
                 <div className={styles.sectionHeader}>
                     <h2>📊 Métricas</h2>
-                    <span className="text-sm text-muted">Hoje</span>
+                    <span className="text-sm text-muted">{periodLabels[selectedPeriod]}</span>
                 </div>
                 <div className={styles.metricsGrid}>
                     <div className={`card ${styles.metricCard}`}>
@@ -287,7 +414,7 @@ export default function DashboardPage() {
                         <div className={styles.metricContent}>
                             <p className="text-sm text-secondary">Taxa Conclusão</p>
                             <h3 className={styles.metricValue}>{metrics.closureRate}</h3>
-                            <p className="text-xs" style={{ color: 'var(--color-success)' }}>Global</p>
+                            <p className="text-xs" style={{ color: 'var(--color-success)' }}>{periodLabels[selectedPeriod]}</p>
                         </div>
                     </div>
 
@@ -301,7 +428,7 @@ export default function DashboardPage() {
                         <div className={styles.metricContent}>
                             <p className="text-sm text-secondary">Fechados</p>
                             <h3 className={styles.metricValue}>{metrics.closedTotal}</h3>
-                            <p className="text-xs" style={{ color: 'var(--color-success)' }}>Total</p>
+                            <p className="text-xs" style={{ color: 'var(--color-success)' }}>{periodLabels[selectedPeriod]}</p>
                         </div>
                     </div>
                 </div>
@@ -333,6 +460,11 @@ export default function DashboardPage() {
                         <h4>Fechados</h4>
                         <p className={styles.pipelineCount}>{pipelineStats.fechado}</p>
                         <span className="badge badge-success">Sucesso</span>
+                    </div>
+                    <div className={`card ${styles.pipelineCard}`}>
+                        <h4>Venda Perdida</h4>
+                        <p className={styles.pipelineCount}>{pipelineStats.venda_perdida}</p>
+                        <span className="badge" style={{ background: '#71717a', color: 'white' }}>Perdido</span>
                     </div>
                 </div>
             </section>

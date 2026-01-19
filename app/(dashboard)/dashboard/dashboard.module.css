@@ -136,3 +136,97 @@
     height: 100%;
     color: var(--color-text-secondary);
 }
+
+/* Time Filter Section */
+.timeFilterSection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.timeFilterContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.timeFilterButton {
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.timeFilterButton:hover {
+    border-color: var(--color-gold-primary);
+    color: var(--color-gold-primary);
+}
+
+.timeFilterActive {
+    background: var(--gradient-gold);
+    color: black;
+    border-color: transparent;
+    font-weight: 600;
+}
+
+.timeFilterActive:hover {
+    color: black;
+}
+
+.customDatePicker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.dateInputGroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dateInputGroup label {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.dateInput {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+}
+
+.dateInput:focus {
+    outline: none;
+    border-color: var(--color-gold-primary);
+}
+
+@media (max-width: 768px) {
+    .timeFilterContainer {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 8px;
+    }
+
+    .timeFilterButton {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .customDatePicker {
+        flex-direction: column;
+    }
+}

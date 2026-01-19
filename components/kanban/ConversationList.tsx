@@ -187,7 +187,8 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
                                     lead.status === 'em_atendimento' ? 'Em Atendimento' :
                                         lead.status === 'nao_respondido' ? 'Não Respondido' :
                                             lead.status === 'em_negociacao' ? 'Em Negociação' :
-                                                lead.status === 'fechado' ? 'Fechado' : ''
+                                                lead.status === 'fechado' ? 'Fechado' :
+                                                    lead.status === 'venda_perdida' ? 'Venda Perdida' : ''
                                 }
                             >
                                 {lead.name ? lead.name[0].toUpperCase() : '#'}
@@ -204,7 +205,7 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
                                             color: 'white',
                                             marginLeft: '6px'
                                         }}>
-                                            {lead.company_tag === 'PSC_CONSORCIOS' ? 'PSCC' : 'PSC+TS'}
+                                            {lead.company_tag === 'PSC_CONSORCIOS' ? 'PSC' : 'PSC+TS'}
                                         </span>
                                     )}
                                 </div>
@@ -216,7 +217,7 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
                                 <div className={styles.leadStatus}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <span className={styles.preview}>
-                                            {lead.status.replace('_', ' ')}
+                                            {(lead.status || 'sem status').replace('_', ' ')}
                                         </span>
                                         <span className={styles.leadTime}>
                                             {format(new Date(lead.updated_at), 'HH:mm')}

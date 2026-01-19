@@ -13,22 +13,50 @@ interface Props {
 }
 
 const cleanMessageContent = (content: string) => {
-    if (!content || !content.startsWith('[Used tools:')) return content;
+    if (!content) return content;
 
-    let depth = 0;
-    let endIndex = -1;
-
-    for (let i = 0; i < content.length; i++) {
-        if (content[i] === '[') depth++;
-        else if (content[i] === ']') depth--;
-
-        if (depth === 0) {
-            endIndex = i;
-            break;
+    // 1. Try to parse JSON output format from AI agents
+    // Format: {"output":{"requisicao_inicial":false,"mensagem":"..."}}
+    try {
+        // Check if content looks like JSON
+        if (content.trim().startsWith('{')) {
+            const parsed = JSON.parse(content);
+            // Handle nested output.mensagem
+            if (parsed.output?.mensagem) {
+                return parsed.output.mensagem;
+            }
+            // Handle direct mensagem field
+            if (parsed.mensagem) {
+                return parsed.mensagem;
+            }
+            // Handle output as string
+            if (typeof parsed.output === 'string') {
+                return parsed.output;
+            }
         }
+    } catch {
+        // Not valid JSON, continue with other cleaning
     }
 
-    return endIndex !== -1 ? content.substring(endIndex + 1).trim() : content;
+    // 2. Clean [Used tools:...] prefix
+    if (content.startsWith('[Used tools:')) {
+        let depth = 0;
+        let endIndex = -1;
+
+        for (let i = 0; i < content.length; i++) {
+            if (content[i] === '[') depth++;
+            else if (content[i] === ']') depth--;
+
+            if (depth === 0) {
+                endIndex = i;
+                break;
+            }
+        }
+
+        return endIndex !== -1 ? content.substring(endIndex + 1).trim() : content;
+    }
+
+    return content;
 }
 
 export default function ChatInterface({ leadId, onBack }: Props) {

@@ -44,7 +44,8 @@
 
 .columnWrapper {
     flex: 1;
-    min-width: 300px;
+    min-width: 220px;
+    max-width: 280px;
     height: 100%;
 }
 

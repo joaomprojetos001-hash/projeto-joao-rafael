@@ -105,6 +105,11 @@
     background: linear-gradient(135deg, #48BB78 0%, #38A169 100%);
 }
 
+/* Venda Perdida = Black/Dark Gray */
+.avatar[data-status="Venda Perdida"] {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+}
+
 /* Default fallback */
 .avatar:not([data-status]) {
     background: linear-gradient(135deg, #718096 0%, #4A5568 100%);

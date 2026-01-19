@@ -24,7 +24,8 @@ const COLUMNS = [
     { id: 'em_atendimento', title: 'Em Atendimento', color: '#6366f1' },
     { id: 'nao_respondido', title: 'Não Respondido', color: '#ef4444' },
     { id: 'em_negociacao', title: 'Em Negociação', color: '#f59e0b' },
-    { id: 'fechado', title: 'Fechado', color: '#10b981' }
+    { id: 'fechado', title: 'Fechado', color: '#10b981' },
+    { id: 'venda_perdida', title: 'Venda Perdida', color: '#71717a' }
 ]
 
 interface Product {

@@ -32,14 +32,35 @@ interface Props {
 export default function UserDetailModal({ userId, isOpen, onClose, onUpdate }: Props) {
     const [user, setUser] = useState<UserProfile | null>(null)
     const [products, setProducts] = useState<any[]>([])
+    const [allProducts, setAllProducts] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [processing, setProcessing] = useState(false)
+    const [editingProducts, setEditingProducts] = useState(false)
 
     useEffect(() => {
         if (isOpen && userId) {
             fetchDetails()
+            fetchAllProducts()
         }
     }, [isOpen, userId])
+
+    const fetchAllProducts = async () => {
+        const supabase = createClient()
+        const { data } = await supabase.from('produtos').select('id, nome, company_tag').eq('is_active', true).order('nome')
+        if (data) setAllProducts(data)
+    }
+
+    const toggleProduct = async (productId: string, isCurrentlyAssigned: boolean) => {
+        setProcessing(true)
+        const supabase = createClient()
+        if (isCurrentlyAssigned) {
+            await supabase.from('user_products').delete().eq('user_id', userId).eq('product_id', productId)
+        } else {
+            await supabase.from('user_products').insert({ user_id: userId, product_id: productId })
+        }
+        await fetchDetails()
+        setProcessing(false)
+    }
 
     const fetchDetails = async () => {
         setLoading(true)
@@ -217,21 +238,76 @@ export default function UserDetailModal({ userId, isOpen, onClose, onUpdate }: P
                         </div>
 
                         {/* Products Section */}
-                        <h4 style={{ fontSize: '1rem', marginBottom: '12px', borderBottom: '1px solid var(--color-border)', paddingBottom: '8px' }}>Produtos Habilitados</h4>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
-                            {products.length > 0 ? products.map((p, idx) => (
-                                <span key={idx} style={{
-                                    padding: '6px 12px', borderRadius: '20px',
-                                    background: 'var(--color-bg-secondary)',
-                                    border: '1px solid var(--color-border)',
-                                    fontSize: '0.9rem'
-                                }}>
-                                    {p.product_name}
-                                </span>
-                            )) : (
-                                <span style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>Nenhum produto vinculado.</span>
-                            )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid var(--color-border)', paddingBottom: '8px' }}>
+                            <h4 style={{ fontSize: '1rem', margin: 0 }}>Produtos Habilitados</h4>
+                            <button
+                                onClick={() => setEditingProducts(!editingProducts)}
+                                className="btn"
+                                style={{ padding: '4px 12px', fontSize: '0.8rem' }}
+                            >
+                                {editingProducts ? 'Fechar' : 'Editar'}
+                            </button>
                         </div>
+
+                        {editingProducts ? (
+                            <div style={{ marginBottom: '24px', maxHeight: '300px', overflowY: 'auto', padding: '12px', background: 'var(--color-bg-secondary)', borderRadius: '8px' }}>
+                                {/* PSC+TS Products */}
+                                <div style={{ marginBottom: '16px' }}>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--color-gold)', marginBottom: '8px', textTransform: 'uppercase' }}>PSC+TS</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                                        {allProducts.filter(p => p.company_tag === 'PSC_TS').map(p => {
+                                            const isAssigned = products.some(up => up.product_id === p.id)
+                                            return (
+                                                <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: processing ? 'wait' : 'pointer', opacity: processing ? 0.6 : 1 }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isAssigned}
+                                                        onChange={() => toggleProduct(p.id, isAssigned)}
+                                                        disabled={processing}
+                                                    />
+                                                    <span style={{ fontSize: '0.85rem' }}>{p.nome}</span>
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                                {/* PSC Consórcios Products */}
+                                <div>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#10b981', marginBottom: '8px', textTransform: 'uppercase' }}>PSC Consórcios</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                                        {allProducts.filter(p => p.company_tag === 'PSC_CONSORCIOS').map(p => {
+                                            const isAssigned = products.some(up => up.product_id === p.id)
+                                            return (
+                                                <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: processing ? 'wait' : 'pointer', opacity: processing ? 0.6 : 1 }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isAssigned}
+                                                        onChange={() => toggleProduct(p.id, isAssigned)}
+                                                        disabled={processing}
+                                                    />
+                                                    <span style={{ fontSize: '0.85rem' }}>{p.nome}</span>
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
+                                {products.length > 0 ? products.map((p, idx) => (
+                                    <span key={idx} style={{
+                                        padding: '6px 12px', borderRadius: '20px',
+                                        background: 'var(--color-bg-secondary)',
+                                        border: '1px solid var(--color-border)',
+                                        fontSize: '0.9rem'
+                                    }}>
+                                        {p.product_name}
+                                    </span>
+                                )) : (
+                                    <span style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>Nenhum produto vinculado. Clique em "Editar" para adicionar.</span>
+                                )}
+                            </div>
+                        )}
 
                         {/* Danger Zone / Admin Actions */}
                         <div style={{ paddingTop: '20px', borderTop: '1px solid var(--color-border)' }}>

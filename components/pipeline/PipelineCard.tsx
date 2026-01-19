@@ -21,8 +21,16 @@ export default function PipelineCard({ lead, products, onDragStart, onView, onMo
         }
     }
 
+    // Check if produto_interesse is a UUID or a name
     const productName = lead.produto_interesse
-        ? products.find(p => p.id === lead.produto_interesse)?.nome || 'Produto Desconhecido'
+        ? (
+            // Try to find by ID first
+            products.find(p => p.id === lead.produto_interesse)?.nome ||
+            // If not found, try to find by name (case where produto_interesse stores the name)
+            products.find(p => p.nome.toLowerCase() === lead.produto_interesse?.toLowerCase())?.nome ||
+            // If still not found but there's a value, just display it directly
+            lead.produto_interesse
+        )
         : null
 
     return (
@@ -43,7 +51,7 @@ export default function PipelineCard({ lead, products, onDragStart, onView, onMo
                             color: 'white',
                             fontWeight: 'bold'
                         }}>
-                            {lead.company_tag === 'PSC_CONSORCIOS' ? 'PSCC' : 'PSC+TS'}
+                            {lead.company_tag === 'PSC_CONSORCIOS' ? 'PSC' : 'PSC+TS'}
                         </span>
                     )}
                 </div>
