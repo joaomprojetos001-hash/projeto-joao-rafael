@@ -18,7 +18,7 @@ export default function CreateCampaignModal({ onClose, onSuccess }: Props) {
         nome: '',
         mensagem: '',
         tempo_disparo: '',
-        segmento: 'nao_fechados',
+        segmento: 'nao_respondidos',
         product_id: '',
         whatsapp_instance_id: '',
         is_recurrent: false,
@@ -106,11 +106,15 @@ export default function CreateCampaignModal({ onClose, onSuccess }: Props) {
             console.error('Erro ao acionar webhook de campanha:', error)
         }
 
+        // Determine company tag to use
+        const companyTag = selectedCompany === 'ALL' ? 'PSC_TS' : selectedCompany
+        console.log('[CreateCampaignModal] Creating campaign with company_tag:', companyTag, '| selectedCompany from context:', selectedCompany)
+
         const { error } = await supabase
             .from('campanhas')
             .insert({
                 ...formData,
-                company_tag: selectedCompany === 'ALL' ? 'PSC_TS' : selectedCompany, // Default to PSC_TS if ALL
+                company_tag: companyTag,
                 product_id: formData.product_id || null
             })
 
@@ -203,9 +207,9 @@ export default function CreateCampaignModal({ onClose, onSuccess }: Props) {
                             value={formData.segmento}
                             onChange={e => setFormData({ ...formData, segmento: e.target.value })}
                         >
-                            <option value="nao_fechados">Não Fechados</option>
+                            <option value="nao_respondidos">Não Respondidos</option>
                             <option value="fechados">Fechados</option>
-                            <option value="todos">Todos</option>
+                            <option value="venda_perdida">Venda Perdida</option>
                         </select>
                     </div>
 

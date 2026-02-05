@@ -129,6 +129,10 @@ input:checked+.slider {
     background-color: var(--color-gold-primary);
 }
 
+input:checked+.slider:before {
+    transform: translateX(20px);
+}
+
 .toggleRow {
     display: flex;
     justify-content: space-between;

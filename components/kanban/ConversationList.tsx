@@ -24,6 +24,9 @@ interface Props {
     onSelectLead: (id: string) => void
 }
 
+// LocalStorage key for tracking read leads
+const READ_LEADS_KEY = 'kanban_read_leads'
+
 export default function ConversationList({ selectedLeadId, onSelectLead }: Props) {
     const searchParams = useSearchParams()
     const urlLeadId = searchParams.get('leadId')
@@ -32,7 +35,24 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
     const [filter, setFilter] = useState('all') // all, urgent, active
     const [searchTerm, setSearchTerm] = useState('')
 
+    // Track which leads have been attended by a human
+    const [humanAttendedLeads, setHumanAttendedLeads] = useState<Set<string>>(new Set())
+    // Track last read timestamp per lead
+    const [readLeads, setReadLeads] = useState<Record<string, string>>({})
+
     const { selectedCompany } = useCompany()
+
+    // Load read leads from localStorage on mount
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem(READ_LEADS_KEY)
+            if (stored) {
+                setReadLeads(JSON.parse(stored))
+            }
+        } catch (e) {
+            console.error('Error loading read leads from localStorage:', e)
+        }
+    }, [])
 
     useEffect(() => {
         const fetchLeads = async () => {
@@ -105,19 +125,76 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
 
         fetchLeads()
 
-        // Realtime subscription
+        // Realtime subscription for leads
         const supabase = createClient()
-        const channel = supabase
+        const leadsChannel = supabase
             .channel('leads-list')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' },
-                () => fetchLeads() // Re-fetch to re-apply filters robustly
+                () => fetchLeads()
+            )
+            .subscribe()
+
+        // Realtime subscription for messages - to update unread badges
+        const messagesChannel = supabase
+            .channel('messages-list')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
+                () => fetchLeads() // Refetch to update updated_at order and unread status
             )
             .subscribe()
 
         return () => {
-            supabase.removeChannel(channel)
+            supabase.removeChannel(leadsChannel)
+            supabase.removeChannel(messagesChannel)
         }
     }, []) // Removed selectedCompany dependency
+
+    // Fetch human-attended leads (leads with messages from dashboard_human)
+    useEffect(() => {
+        const fetchHumanAttendedLeads = async () => {
+            if (leads.length === 0) return
+
+            const supabase = createClient()
+            const phonesToCheck = leads.map(l => l.phone)
+
+            // Query messages where metadata.origin = 'dashboard_human'
+            const { data: humanMessages } = await supabase
+                .from('messages')
+                .select('session_id')
+                .in('session_id', phonesToCheck)
+                .contains('message', { metadata: { origin: 'dashboard_human' } })
+
+            if (humanMessages) {
+                const attendedPhones = new Set(humanMessages.map(m => m.session_id))
+                const attendedLeadIds = new Set(
+                    leads.filter(l => attendedPhones.has(l.phone)).map(l => l.id)
+                )
+                setHumanAttendedLeads(attendedLeadIds)
+            }
+        }
+
+        fetchHumanAttendedLeads()
+    }, [leads])
+
+    // Mark lead as read when selected
+    const handleSelectLead = (leadId: string) => {
+        const lead = leads.find(l => l.id === leadId)
+        if (lead) {
+            const newReadLeads = {
+                ...readLeads,
+                [leadId]: lead.updated_at
+            }
+            setReadLeads(newReadLeads)
+            localStorage.setItem(READ_LEADS_KEY, JSON.stringify(newReadLeads))
+        }
+        onSelectLead(leadId)
+    }
+
+    // Check if lead has unread messages
+    const isUnread = (lead: Lead): boolean => {
+        const lastRead = readLeads[lead.id]
+        if (!lastRead) return true // Never read = unread
+        return new Date(lead.updated_at) > new Date(lastRead)
+    }
 
     const filteredLeads = leads.filter(lead => {
         // Search Filter
@@ -179,7 +256,7 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
                         <div
                             key={lead.id}
                             className={`${styles.item} ${selectedLeadId === lead.id ? styles.selected : ''}`}
-                            onClick={() => onSelectLead(lead.id)}
+                            onClick={() => handleSelectLead(lead.id)}
                         >
                             <div
                                 className={styles.avatar}
@@ -196,6 +273,10 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
                             <div className={styles.leadInfo}>
                                 <div className={styles.leadHeader}>
                                     <span className={styles.leadName}>{lead.name || lead.phone}</span>
+                                    {/* Human Attended Badge - only for em_negociacao with human response */}
+                                    {lead.status === 'em_negociacao' && humanAttendedLeads.has(lead.id) && (
+                                        <span className={styles.humanAttendedBadge} title="Atendido por humano">✓</span>
+                                    )}
                                     {lead.company_tag && (
                                         <span style={{
                                             fontSize: '0.65rem',
@@ -207,6 +288,10 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
                                         }}>
                                             {lead.company_tag === 'PSC_CONSORCIOS' ? 'PSC' : 'PSC+TS'}
                                         </span>
+                                    )}
+                                    {/* Unread Badge */}
+                                    {isUnread(lead) && (
+                                        <span className={styles.unreadBadge} title="Conversa não lida"></span>
                                     )}
                                 </div>
                                 {lead.atendente_responsavel && (

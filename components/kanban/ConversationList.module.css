@@ -180,3 +180,48 @@
     text-align: center;
     color: var(--color-text-card-secondary);
 }
+
+/* Human Attended Badge - green checkmark */
+.humanAttendedBadge {
+    color: #10b981;
+    font-size: 0.875rem;
+    margin-left: 4px;
+    font-weight: bold;
+}
+
+/* Unread Conversation Badge - blue dot */
+.unreadBadge {
+    width: 10px;
+    height: 10px;
+    background: #3b82f6;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.leadInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.leadHeader {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.leadName {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-text-primary);
+}
+
+.leadStatus {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}

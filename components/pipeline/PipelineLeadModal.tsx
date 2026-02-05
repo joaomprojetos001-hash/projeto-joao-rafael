@@ -14,6 +14,7 @@ interface Lead {
     created_at: string
     is_blocked?: boolean
     produto_interesse?: string
+    company_tag?: string
 }
 
 interface Props {
@@ -57,23 +58,31 @@ export default function PipelineLeadModal({ lead, onClose, onUpdate }: Props) {
 
         if (msgError) {
             console.error('Erro ao apagar mensagens:', msgError)
-            // We continue to delete the lead even if messages fail, or we could stop.
-            // Continuing is usually better to at least remove the lead.
         }
 
-        // 2. Delete Lead
+        // 2. Delete Agent Memory based on company_tag
+        const memoryTable = lead.company_tag === 'PSC_CONSORCIOS'
+            ? 'histórico_mensagensconsorcios'
+            : 'histórico_mensagens_pscts'
+
+        const { error: memoryError } = await supabase
+            .from(memoryTable)
+            .delete()
+            .eq('session_id', lead.phone)
+
+        if (memoryError) {
+            console.error(`Erro ao apagar memória do agente (${memoryTable}):`, memoryError)
+        }
+
+        // 3. Delete Lead
         const { error } = await supabase
             .from('leads')
             .delete()
             .eq('id', lead.id)
 
         if (!error) {
-            // Force refresh or close modal
-            // Ideally we need a callback to remove from parent list, but close works for now if parent refreshes via realtime or manual
             onClose()
-            // We might want to trigger a refresh in parent, but onUpdate only does partial. 
-            // In a real app, passing onDelete would be better. For now user will verify visual deletion.
-            window.location.reload() // Simple way to ensure list update since we lack onDelete callback
+            window.location.reload()
         } else {
             console.error('Erro ao apagar lead:', error)
             alert('Erro ao apagar lead')
