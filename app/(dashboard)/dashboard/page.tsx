@@ -194,7 +194,7 @@ export default function DashboardPage() {
             queryClosed = applyFilter(queryClosed)
             const { count: closedTotal } = await queryClosed
 
-            // 4. Leads Urgentes (Top 3, not affected by period filter)
+            // 4. Leads Urgentes (Top 3, ALWAYS visible regardless of company/date filter)
             let queryUrgents = supabase
                 .from('leads')
                 .select('*')
@@ -202,7 +202,12 @@ export default function DashboardPage() {
                 .neq('status', 'em_atendimento')
                 .order('updated_at', { ascending: false })
                 .limit(3)
-            queryUrgents = applyFilter(queryUrgents, false)
+            // Only apply product filter for non-admins (no company or date filter for urgent leads)
+            if (!isAdmin && productIds && productIds.length > 0) {
+                queryUrgents = queryUrgents.in('produto_interesse', productIds)
+            } else if (!isAdmin && (!productIds || productIds.length === 0)) {
+                queryUrgents = queryUrgents.eq('id', '00000000-0000-0000-0000-000000000000')
+            }
             const { data: urgents } = await queryUrgents
 
             // 5. Pipeline Stats (filtered by period)
