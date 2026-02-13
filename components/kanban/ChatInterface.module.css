@@ -235,6 +235,15 @@
     display: block;
 }
 
+.mediaVideo {
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-sm);
+    display: block;
+    outline: none;
+}
+
 .documentLink {
     display: flex;
     align-items: center;

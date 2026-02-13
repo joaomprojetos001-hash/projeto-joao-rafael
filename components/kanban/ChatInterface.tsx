@@ -150,7 +150,7 @@ export default function ChatInterface({ leadId, onBack }: Props) {
 
         setSelectedFile(file)
 
-        if (file.type.startsWith('image/')) {
+        if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
             setFilePreviewUrl(URL.createObjectURL(file))
         } else {
             setFilePreviewUrl(null)
@@ -180,20 +180,22 @@ export default function ChatInterface({ leadId, onBack }: Props) {
         try {
             let mediaBase64: string | undefined
             let mediaMime: string | undefined
-            let mediaType: 'image' | 'document' | undefined
+            let mediaType: 'image' | 'video' | 'document' | undefined
             let fileName: string | undefined
 
             // Convert file to base64
             if (hasFile) {
                 mediaBase64 = await fileToBase64(selectedFile)
                 mediaMime = selectedFile.type
-                mediaType = selectedFile.type.startsWith('image/') ? 'image' : 'document'
+                mediaType = selectedFile.type.startsWith('image/') ? 'image'
+                    : selectedFile.type.startsWith('video/') ? 'video'
+                        : 'document'
                 fileName = selectedFile.name
             }
 
             const messageContent = hasText
                 ? inputValue
-                : (mediaType === 'image' ? '📷 Imagem' : `📎 ${fileName}`)
+                : (mediaType === 'image' ? '📷 Imagem' : mediaType === 'video' ? '🎥 Vídeo' : `📎 ${fileName}`)
 
             // Save message to DB (without base64 to keep DB light)
             const newMessage = {
@@ -205,8 +207,8 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                         origin: 'dashboard_human' as const,
                         ...(mediaType && { mediaType }),
                         ...(fileName && { fileName }),
-                        // Store a small data URI only for images (for chat preview)
-                        ...(mediaBase64 && mediaType === 'image' && {
+                        // Store data URI for images/videos (for chat preview)
+                        ...(mediaBase64 && (mediaType === 'image' || mediaType === 'video') && {
                             mediaDataUri: `data:${mediaMime};base64,${mediaBase64}`
                         })
                     }
@@ -262,6 +264,17 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                     alt={fileName || 'Imagem'}
                     className={styles.mediaImage}
                     loading="lazy"
+                />
+            )
+        }
+
+        if (mediaType === 'video' && mediaDataUri) {
+            return (
+                <video
+                    src={mediaDataUri}
+                    controls
+                    className={styles.mediaVideo}
+                    preload="metadata"
                 />
             )
         }
@@ -362,7 +375,7 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                 <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+                    accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,video/mp4,video/webm,video/quicktime"
                     onChange={handleFileSelect}
                     style={{ display: 'none' }}
                 />
