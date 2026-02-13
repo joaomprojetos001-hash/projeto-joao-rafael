@@ -59,6 +59,24 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
+    // 4. Verificar se o usuário foi aprovado pelo admin
+    if (user && !isLoginPage && !isRegisterPage) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_approved')
+            .eq('id', user.id)
+            .single()
+
+        if (profile && !profile.is_approved) {
+            console.log('[Middleware] User not approved, signing out and redirecting to /login')
+            await supabase.auth.signOut()
+            const url = request.nextUrl.clone()
+            url.pathname = '/login'
+            url.searchParams.set('error', 'not_approved')
+            return NextResponse.redirect(url)
+        }
+    }
+
     if (user && (isLoginPage || isRegisterPage)) {
         console.log('[Middleware] Redirecting to /dashboard (Already Authenticated)')
         // Se tem usuário e tenta acessar login ou register -> Dashboard

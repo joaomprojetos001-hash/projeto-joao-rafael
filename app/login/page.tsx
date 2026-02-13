@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, FormEvent } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import styles from './login.module.css'
 
 export default function LoginPage() {
@@ -12,6 +12,8 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const emailConfirmed = searchParams.get('confirmed') === 'true'
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
@@ -92,6 +94,21 @@ export default function LoginPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className={styles.form}>
+                    {emailConfirmed && (
+                        <div style={{
+                            background: 'rgba(34, 197, 94, 0.15)',
+                            border: '1px solid rgba(34, 197, 94, 0.4)',
+                            color: '#22c55e',
+                            padding: '12px 16px',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            marginBottom: '16px',
+                            textAlign: 'center'
+                        }}>
+                            ✅ Email confirmado com sucesso! Aguarde a aprovação do administrador para acessar o sistema.
+                        </div>
+                    )}
+
                     {error && (
                         <div className={styles.error}>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">

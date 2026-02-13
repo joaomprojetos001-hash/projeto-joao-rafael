@@ -5,7 +5,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function GET(request: NextRequest) {
     const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
-    const next = searchParams.get('next') ?? '/login'
 
     if (code) {
         const cookieStore = await cookies()
@@ -26,15 +25,21 @@ export async function GET(request: NextRequest) {
             }
         )
 
+        // Trocar o código por uma sessão (isso confirma o email no Supabase)
         const { error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (!error) {
-            // Redirecionar para login após confirmação de email
-            // O usuário ainda precisa de aprovação do admin para acessar o dashboard
-            return NextResponse.redirect(`${origin}${next}`)
+            // Fazer logout imediatamente após confirmar o email
+            // O usuário precisa de aprovação do admin antes de acessar o sistema
+            await supabase.auth.signOut()
+
+            // Redirecionar para login com mensagem de sucesso
+            return NextResponse.redirect(
+                `${origin}/login?confirmed=true`
+            )
         }
     }
 
-    // Em caso de erro, redirecionar para login com mensagem
+    // Em caso de erro, redirecionar para login com mensagem de erro
     return NextResponse.redirect(`${origin}/login?error=auth_callback_error`)
 }
