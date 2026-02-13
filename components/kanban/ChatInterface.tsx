@@ -16,55 +16,52 @@ const cleanMessageContent = (content: string) => {
     if (!content) return content;
 
     // 1. Try to parse JSON output format from AI agents
-    // Format: {"output":{"requisicao_inicial":false,"mensagem":"..."}}
     try {
-        // Check if content looks like JSON
         if (content.trim().startsWith('{')) {
             const parsed = JSON.parse(content);
-            // Handle nested output.mensagem
-            if (parsed.output?.mensagem) {
-                return parsed.output.mensagem;
-            }
-            // Handle direct mensagem field
-            if (parsed.mensagem) {
-                return parsed.mensagem;
-            }
-            // Handle output as string
-            if (typeof parsed.output === 'string') {
-                return parsed.output;
-            }
+            if (parsed.output?.mensagem) return parsed.output.mensagem;
+            if (parsed.mensagem) return parsed.mensagem;
+            if (typeof parsed.output === 'string') return parsed.output;
         }
     } catch {
-        // Not valid JSON, continue with other cleaning
+        // Not valid JSON
     }
 
     // 2. Clean [Used tools:...] prefix
     if (content.startsWith('[Used tools:')) {
         let depth = 0;
         let endIndex = -1;
-
         for (let i = 0; i < content.length; i++) {
             if (content[i] === '[') depth++;
             else if (content[i] === ']') depth--;
-
-            if (depth === 0) {
-                endIndex = i;
-                break;
-            }
+            if (depth === 0) { endIndex = i; break; }
         }
-
         return endIndex !== -1 ? content.substring(endIndex + 1).trim() : content;
     }
 
     return content;
 }
 
-// Helper to get file extension icon
 const getFileIcon = (fileName: string) => {
     const ext = fileName?.split('.').pop()?.toLowerCase()
     if (ext === 'pdf') return '📄'
     if (['doc', 'docx'].includes(ext || '')) return '📝'
     return '📎'
+}
+
+// Convert File to base64 string
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+            const result = reader.result as string
+            // Remove the data:mime;base64, prefix to get pure base64
+            const base64 = result.split(',')[1]
+            resolve(base64)
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+    })
 }
 
 export default function ChatInterface({ leadId, onBack }: Props) {
@@ -83,7 +80,6 @@ export default function ChatInterface({ leadId, onBack }: Props) {
     const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null)
     const [uploading, setUploading] = useState(false)
 
-    // Buscar telefone e nome do lead
     useEffect(() => {
         const fetchLeadData = async () => {
             const supabase = createClient()
@@ -96,13 +92,12 @@ export default function ChatInterface({ leadId, onBack }: Props) {
             if (data) {
                 setLeadPhone(data.phone)
                 setLeadName(data.name)
-                setCompanyTag(data.company_tag || 'PSC_TS') // Default if empty
+                setCompanyTag(data.company_tag || 'PSC_TS')
             }
         }
         fetchLeadData()
     }, [leadId])
 
-    // Buscar mensagens e Realtime
     useEffect(() => {
         if (!leadPhone) return
 
@@ -112,7 +107,6 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                 .from('messages')
                 .select('*')
                 .eq('session_id', leadPhone)
-                // Filter to only show conversation items
                 .in('message->>type', ['human', 'ai'])
                 .order('created_at', { ascending: true })
 
@@ -135,9 +129,7 @@ export default function ChatInterface({ leadId, onBack }: Props) {
             )
             .subscribe()
 
-        return () => {
-            supabase.removeChannel(channel)
-        }
+        return () => { supabase.removeChannel(channel) }
     }, [leadPhone])
 
     const scrollToBottom = () => {
@@ -151,7 +143,6 @@ export default function ChatInterface({ leadId, onBack }: Props) {
         const file = e.target.files?.[0]
         if (!file) return
 
-        // Validate size (10MB)
         if (file.size > 10 * 1024 * 1024) {
             alert('Arquivo muito grande. Máximo: 10MB')
             return
@@ -159,10 +150,8 @@ export default function ChatInterface({ leadId, onBack }: Props) {
 
         setSelectedFile(file)
 
-        // Generate preview for images
         if (file.type.startsWith('image/')) {
-            const url = URL.createObjectURL(file)
-            setFilePreviewUrl(url)
+            setFilePreviewUrl(URL.createObjectURL(file))
         } else {
             setFilePreviewUrl(null)
         }
@@ -174,36 +163,7 @@ export default function ChatInterface({ leadId, onBack }: Props) {
             URL.revokeObjectURL(filePreviewUrl)
             setFilePreviewUrl(null)
         }
-        if (fileInputRef.current) {
-            fileInputRef.current.value = ''
-        }
-    }
-
-    const uploadFile = async (file: File): Promise<{ url: string; mediaType: 'image' | 'document' } | null> => {
-        const supabase = createClient()
-        const timestamp = Date.now()
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-        const filePath = `${leadPhone}/${timestamp}_${safeName}`
-
-        const { data, error } = await supabase.storage
-            .from('chat-attachments')
-            .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false
-            })
-
-        if (error) {
-            console.error('Upload error:', error)
-            return null
-        }
-
-        const { data: urlData } = supabase.storage
-            .from('chat-attachments')
-            .getPublicUrl(data.path)
-
-        const mediaType = file.type.startsWith('image/') ? 'image' : 'document'
-
-        return { url: urlData.publicUrl, mediaType }
+        if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -218,20 +178,16 @@ export default function ChatInterface({ leadId, onBack }: Props) {
         setUploading(true)
 
         try {
-            let mediaUrl: string | undefined
+            let mediaBase64: string | undefined
+            let mediaMime: string | undefined
             let mediaType: 'image' | 'document' | undefined
             let fileName: string | undefined
 
-            // Upload file if selected
+            // Convert file to base64
             if (hasFile) {
-                const result = await uploadFile(selectedFile)
-                if (!result) {
-                    alert('Erro ao enviar arquivo. Tente novamente.')
-                    setUploading(false)
-                    return
-                }
-                mediaUrl = result.url
-                mediaType = result.mediaType
+                mediaBase64 = await fileToBase64(selectedFile)
+                mediaMime = selectedFile.type
+                mediaType = selectedFile.type.startsWith('image/') ? 'image' : 'document'
                 fileName = selectedFile.name
             }
 
@@ -239,16 +195,20 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                 ? inputValue
                 : (mediaType === 'image' ? '📷 Imagem' : `📎 ${fileName}`)
 
+            // Save message to DB (without base64 to keep DB light)
             const newMessage = {
                 session_id: leadPhone,
                 message: {
-                    type: 'ai', // Registra como AI para o cliente ver como resposta da empresa
+                    type: 'ai',
                     content: messageContent,
                     metadata: {
-                        origin: 'dashboard_human',
-                        ...(mediaUrl && { mediaUrl }),
+                        origin: 'dashboard_human' as const,
                         ...(mediaType && { mediaType }),
-                        ...(fileName && { fileName })
+                        ...(fileName && { fileName }),
+                        // Store a small data URI only for images (for chat preview)
+                        ...(mediaBase64 && mediaType === 'image' && {
+                            mediaDataUri: `data:${mediaMime};base64,${mediaBase64}`
+                        })
                     }
                 }
             }
@@ -262,7 +222,7 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                 setInputValue('')
                 clearFile()
 
-                // Disparar Webhook N8N (sem bloquear UI)
+                // Send to N8N webhook with base64
                 fetch('https://api.fabianoportto.shop/webhook/03376cf8-70a8-4642-adf2-431d9216e51f', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -272,7 +232,9 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                         phone: leadPhone,
                         company_tag: companyTag,
                         line_id: companyTag === 'PSC_TS' ? '1' : companyTag === 'PSC_CONSORCIOS' ? '2' : '3',
-                        ...(mediaUrl && { mediaUrl }),
+                        // Media fields (base64 ready for Evolution API)
+                        ...(mediaBase64 && { mediaBase64 }),
+                        ...(mediaMime && { mediaMime }),
                         ...(mediaType && { mediaType }),
                         ...(fileName && { fileName })
                     })
@@ -287,41 +249,29 @@ export default function ChatInterface({ leadId, onBack }: Props) {
         }
     }
 
-    // Render media content in bubbles
+    // Render media in chat bubbles
     const renderMediaContent = (msg: ChatMessageRow) => {
-        const { mediaUrl, mediaType, fileName } = msg.message.metadata || {}
+        const { mediaType, fileName, mediaDataUri } = msg.message.metadata || {}
 
-        if (!mediaUrl) return null
+        if (!mediaType) return null
 
-        if (mediaType === 'image') {
+        if (mediaType === 'image' && mediaDataUri) {
             return (
-                <a href={mediaUrl} target="_blank" rel="noopener noreferrer" className={styles.mediaLink}>
-                    <img
-                        src={mediaUrl}
-                        alt={fileName || 'Imagem'}
-                        className={styles.mediaImage}
-                        loading="lazy"
-                    />
-                </a>
+                <img
+                    src={mediaDataUri}
+                    alt={fileName || 'Imagem'}
+                    className={styles.mediaImage}
+                    loading="lazy"
+                />
             )
         }
 
         if (mediaType === 'document') {
             return (
-                <a
-                    href={mediaUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.documentLink}
-                >
+                <div className={styles.documentLink}>
                     <span className={styles.documentIcon}>{getFileIcon(fileName || '')}</span>
                     <span className={styles.documentName}>{fileName || 'Documento'}</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                </a>
+                </div>
             )
         }
 
@@ -365,7 +315,6 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                 ) : (
                     messages.map((msg) => {
                         const isHuman = msg.message.type === 'human'
-                        // Se for AI, verifica se foi um humano do dashboard
                         const isDashboardAgent = msg.message.metadata?.origin === 'dashboard_human'
 
                         return (
@@ -409,7 +358,6 @@ export default function ChatInterface({ leadId, onBack }: Props) {
             )}
 
             <form onSubmit={handleSendMessage} className={styles.inputArea}>
-                {/* Hidden file input */}
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -418,7 +366,6 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                     style={{ display: 'none' }}
                 />
 
-                {/* Attach button */}
                 <button
                     type="button"
                     className={styles.attachButton}
@@ -455,7 +402,6 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                 </button>
             </form>
 
-            {/* Lead Info Modal (Mobile/Drawer) */}
             {showLeadInfo && (
                 <div className={styles.modalOverlay} onClick={() => setShowLeadInfo(false)}>
                     <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
