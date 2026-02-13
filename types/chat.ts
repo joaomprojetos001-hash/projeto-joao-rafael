@@ -3,6 +3,9 @@ export interface ChatMessageContent {
     content: string
     metadata?: {
         origin?: 'dashboard_human' | 'n8n_ai'
+        mediaUrl?: string
+        mediaType?: 'image' | 'document'
+        fileName?: string
         [key: string]: any
     }
 }
