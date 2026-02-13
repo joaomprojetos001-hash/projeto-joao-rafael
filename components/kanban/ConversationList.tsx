@@ -273,9 +273,12 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
                             <div className={styles.leadInfo}>
                                 <div className={styles.leadHeader}>
                                     <span className={styles.leadName}>{lead.name || lead.phone}</span>
-                                    {/* Human Attended Badge - only for em_negociacao with human response */}
+                                    {/* Human Attended Badge - for em_negociacao leads */}
                                     {lead.status === 'em_negociacao' && humanAttendedLeads.has(lead.id) && (
                                         <span className={styles.humanAttendedBadge} title="Atendido por humano">✓</span>
+                                    )}
+                                    {lead.status === 'em_negociacao' && !humanAttendedLeads.has(lead.id) && (
+                                        <span className={styles.humanNotAttendedBadge} title="Aguardando atendimento humano">✗</span>
                                     )}
                                     {lead.company_tag && (
                                         <span style={{

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import styles from '@/app/(dashboard)/admin/AdminDashboard.module.css'
 import UserDetailModal from './UserDetailModal'
+import CreateUserModal from './CreateUserModal'
 
 interface UserProfile {
     id: string
@@ -20,6 +21,7 @@ export default function AdminApprovals() {
     const [loading, setLoading] = useState(true)
     const [selectedUser, setSelectedUser] = useState<string | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
     useEffect(() => {
         fetchUsers()
@@ -103,7 +105,25 @@ export default function AdminApprovals() {
                 </div>
             </div>
 
-            <h2 className={styles.subtitle}>Gerenciamento de Usuários</h2>
+            <CreateUserModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={() => {
+                    setIsCreateModalOpen(false)
+                    fetchUsers()
+                }}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 className={styles.subtitle} style={{ margin: 0 }}>Gerenciamento de Usuários</h2>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => setIsCreateModalOpen(true)}
+                    style={{ fontSize: '0.875rem', padding: '8px 16px' }}
+                >
+                    + Criar Usuário
+                </button>
+            </div>
 
             <div className={styles.tableContainer}>
                 <table className={styles.table}>

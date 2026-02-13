@@ -178,18 +178,6 @@ function LoginContent() {
                     </div>
                 </form>
 
-                <div className={styles.buttonContainer} style={{ marginTop: '1rem' }}>
-                    <button
-                        type="button"
-                        onClick={() => window.location.href = '/register'}
-                        className={`btn ${styles.secondaryBtn}`}
-                        style={{
-                            width: '100%'
-                        }}
-                    >
-                        Criar Conta
-                    </button>
-                </div>
 
                 <div className={styles.footer}>
                     <p className="text-sm text-muted">

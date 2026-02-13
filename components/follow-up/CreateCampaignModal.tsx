@@ -18,7 +18,7 @@ export default function CreateCampaignModal({ onClose, onSuccess }: Props) {
         nome: '',
         mensagem: '',
         tempo_disparo: '',
-        segmento: 'nao_respondidos',
+        segmento: 'todos',
         product_id: '',
         whatsapp_instance_id: '',
         is_recurrent: false,
@@ -207,8 +207,11 @@ export default function CreateCampaignModal({ onClose, onSuccess }: Props) {
                             value={formData.segmento}
                             onChange={e => setFormData({ ...formData, segmento: e.target.value })}
                         >
-                            <option value="nao_respondidos">Não Respondidos</option>
-                            <option value="fechados">Fechados</option>
+                            <option value="todos">Todos</option>
+                            <option value="em_atendimento">Em Atendimento</option>
+                            <option value="nao_respondido">Não Respondido</option>
+                            <option value="em_negociacao">Em Negociação</option>
+                            <option value="fechado">Fechado</option>
                             <option value="venda_perdida">Venda Perdida</option>
                         </select>
                     </div>

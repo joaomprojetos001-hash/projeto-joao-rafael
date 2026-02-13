@@ -189,6 +189,14 @@
     font-weight: bold;
 }
 
+/* Human NOT Attended Badge - red X */
+.humanNotAttendedBadge {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-left: 4px;
+    font-weight: bold;
+}
+
 /* Unread Conversation Badge - blue dot */
 .unreadBadge {
     width: 10px;

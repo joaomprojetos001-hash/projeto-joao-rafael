@@ -121,8 +121,8 @@ export default function DashboardPage() {
     const [customEndDate, setCustomEndDate] = useState<string>('')
 
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true)
+        const fetchData = async (isInitial = true) => {
+            if (isInitial) setLoading(true)
             const supabase = createClient()
 
             // 1. Get User Profile & Role
@@ -243,10 +243,31 @@ export default function DashboardPage() {
 
             if (urgents) setUrgentLeads(urgents)
             setPipelineStats(stats)
-            setLoading(false)
+            if (isInitial) setLoading(false)
         }
 
-        fetchData()
+        fetchData(true)
+
+        // Realtime: silently refetch when leads or messages change
+        const supabase = createClient()
+        const leadsChannel = supabase
+            .channel('dashboard-leads-rt')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' },
+                () => fetchData(false)
+            )
+            .subscribe()
+
+        const messagesChannel = supabase
+            .channel('dashboard-messages-rt')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
+                () => fetchData(false)
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(leadsChannel)
+            supabase.removeChannel(messagesChannel)
+        }
     }, [selectedCompany, selectedPeriod, customStartDate, customEndDate])
 
     const periodLabels: Record<TimePeriod, string> = {
