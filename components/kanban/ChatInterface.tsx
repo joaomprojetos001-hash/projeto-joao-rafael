@@ -314,6 +314,7 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                     <div className={styles.loading}>Carregando mensagens...</div>
                 ) : (
                     messages.map((msg) => {
+                        if (!msg.message) return null // Skip malformed messages
                         const isHuman = msg.message.type === 'human'
                         const isDashboardAgent = msg.message.metadata?.origin === 'dashboard_human'
 
