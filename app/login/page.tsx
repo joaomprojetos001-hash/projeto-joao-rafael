@@ -1,12 +1,32 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import styles from './login.module.css'
 
 export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className={styles.container}>
+                <div className={styles.loginBox}>
+                    <div className={styles.header}>
+                        <div className={styles.logo}>
+                            <img src="/logo-winged-lion.png" alt="PSC+TS" className={styles.logoImage} />
+                            <div><h1>PSC+TS</h1></div>
+                        </div>
+                        <p className={styles.subtitle}>Carregando...</p>
+                    </div>
+                </div>
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
+    )
+}
+
+function LoginContent() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
