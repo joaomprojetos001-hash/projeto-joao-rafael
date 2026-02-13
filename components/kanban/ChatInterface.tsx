@@ -166,6 +166,31 @@ export default function ChatInterface({ leadId, onBack }: Props) {
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
+    const BASE64_THRESHOLD = 5 * 1024 * 1024 // 5MB - above this, use Storage
+
+    // Upload large files to Supabase Storage
+    const uploadToStorage = async (file: File): Promise<string | null> => {
+        const supabase = createClient()
+        const timestamp = Date.now()
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const filePath = `${leadPhone}/${timestamp}_${safeName}`
+
+        const { data, error } = await supabase.storage
+            .from('chat-attachments')
+            .upload(filePath, file, { cacheControl: '3600', upsert: false })
+
+        if (error) {
+            console.error('Upload error:', error)
+            return null
+        }
+
+        const { data: urlData } = supabase.storage
+            .from('chat-attachments')
+            .getPublicUrl(data.path)
+
+        return urlData.publicUrl
+    }
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault()
 
@@ -180,24 +205,39 @@ export default function ChatInterface({ leadId, onBack }: Props) {
         try {
             let mediaBase64: string | undefined
             let mediaMime: string | undefined
+            let mediaUrl: string | undefined
             let mediaType: 'image' | 'video' | 'document' | undefined
             let fileName: string | undefined
+            let usedStorage = false
 
-            // Convert file to base64
             if (hasFile) {
-                mediaBase64 = await fileToBase64(selectedFile)
                 mediaMime = selectedFile.type
                 mediaType = selectedFile.type.startsWith('image/') ? 'image'
                     : selectedFile.type.startsWith('video/') ? 'video'
                         : 'document'
                 fileName = selectedFile.name
+
+                if (selectedFile.size > BASE64_THRESHOLD) {
+                    // Large file → upload to Supabase Storage
+                    const url = await uploadToStorage(selectedFile)
+                    if (!url) {
+                        alert('Erro ao enviar arquivo grande. Tente novamente.')
+                        setUploading(false)
+                        return
+                    }
+                    mediaUrl = url
+                    usedStorage = true
+                } else {
+                    // Small file → convert to base64
+                    mediaBase64 = await fileToBase64(selectedFile)
+                }
             }
 
             const messageContent = hasText
                 ? inputValue
                 : (mediaType === 'image' ? '📷 Imagem' : mediaType === 'video' ? '🎥 Vídeo' : `📎 ${fileName}`)
 
-            // Save message to DB (without base64 to keep DB light)
+            // Save message to DB
             const newMessage = {
                 session_id: leadPhone,
                 message: {
@@ -207,10 +247,12 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                         origin: 'dashboard_human' as const,
                         ...(mediaType && { mediaType }),
                         ...(fileName && { fileName }),
-                        // Store data URI for images/videos (for chat preview)
+                        // Small files: store data URI for inline preview
                         ...(mediaBase64 && (mediaType === 'image' || mediaType === 'video') && {
                             mediaDataUri: `data:${mediaMime};base64,${mediaBase64}`
-                        })
+                        }),
+                        // Large files: store public URL
+                        ...(mediaUrl && { mediaUrl })
                     }
                 }
             }
@@ -224,7 +266,7 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                 setInputValue('')
                 clearFile()
 
-                // Send to N8N webhook with base64
+                // Send to N8N webhook
                 fetch('https://api.fabianoportto.shop/webhook/03376cf8-70a8-4642-adf2-431d9216e51f', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -234,8 +276,10 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                         phone: leadPhone,
                         company_tag: companyTag,
                         line_id: companyTag === 'PSC_TS' ? '1' : companyTag === 'PSC_CONSORCIOS' ? '2' : '3',
-                        // Media fields (base64 ready for Evolution API)
+                        // Small files: send base64 directly
                         ...(mediaBase64 && { mediaBase64 }),
+                        // Large files: send public URL
+                        ...(mediaUrl && { mediaUrl }),
                         ...(mediaMime && { mediaMime }),
                         ...(mediaType && { mediaType }),
                         ...(fileName && { fileName })
@@ -253,25 +297,31 @@ export default function ChatInterface({ leadId, onBack }: Props) {
 
     // Render media in chat bubbles
     const renderMediaContent = (msg: ChatMessageRow) => {
-        const { mediaType, fileName, mediaDataUri } = msg.message.metadata || {}
+        const { mediaType, fileName, mediaDataUri, mediaUrl } = msg.message.metadata || {}
 
         if (!mediaType) return null
 
-        if (mediaType === 'image' && mediaDataUri) {
+        // Use data URI (base64 small files) or public URL (large files from storage)
+        const imageSrc = mediaDataUri || mediaUrl
+        const videoSrc = mediaDataUri || mediaUrl
+
+        if (mediaType === 'image' && imageSrc) {
             return (
-                <img
-                    src={mediaDataUri}
-                    alt={fileName || 'Imagem'}
-                    className={styles.mediaImage}
-                    loading="lazy"
-                />
+                <a href={imageSrc} target="_blank" rel="noopener noreferrer">
+                    <img
+                        src={imageSrc}
+                        alt={fileName || 'Imagem'}
+                        className={styles.mediaImage}
+                        loading="lazy"
+                    />
+                </a>
             )
         }
 
-        if (mediaType === 'video' && mediaDataUri) {
+        if (mediaType === 'video' && videoSrc) {
             return (
                 <video
-                    src={mediaDataUri}
+                    src={videoSrc}
                     controls
                     className={styles.mediaVideo}
                     preload="metadata"
@@ -280,11 +330,24 @@ export default function ChatInterface({ leadId, onBack }: Props) {
         }
 
         if (mediaType === 'document') {
+            const docSrc = mediaDataUri || mediaUrl
             return (
-                <div className={styles.documentLink}>
+                <a
+                    href={docSrc || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.documentLink}
+                >
                     <span className={styles.documentIcon}>{getFileIcon(fileName || '')}</span>
                     <span className={styles.documentName}>{fileName || 'Documento'}</span>
-                </div>
+                    {docSrc && (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                    )}
+                </a>
             )
         }
 
