@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   description: 'Sistema de gestão de leads',
   icons: {
     icon: '/logo-winged-lion.png',
+    apple: '/logo-winged-lion.png',
   },
 }
 
