@@ -1,16 +1,20 @@
 .container {
     display: flex;
     height: calc(100vh - 40px);
-    /* Ajuste para padding do layout */
-    background: var(--color-surface);
+    background: var(--color-bg-primary);
+    /* Changed from surface for boxing effect */
     border-radius: var(--radius-lg);
     overflow: hidden;
     border: 1px solid var(--color-border);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-sm);
+    /* Subtler shadow */
+    width: 100%;
+    /* Ensure fluid width */
 }
 
 .sidebar {
-    width: 320px;
+    width: clamp(280px, 20vw, 350px);
+    /* Fluid sidebar width */
     border-right: 1px solid var(--color-border);
     background: var(--color-bg-secondary);
     display: flex;
@@ -38,7 +42,8 @@
 }
 
 .infoArea {
-    width: 300px;
+    width: clamp(250px, 18vw, 320px);
+    /* Fluid info area */
     border-left: 1px solid var(--color-border);
     background: var(--color-bg-secondary);
     overflow-y: auto;
@@ -86,9 +91,12 @@
 
 @media (max-width: 768px) {
     .container {
-        height: calc(100vh - 80px);
-        /* Adjust for mobile header + padding */
+        height: calc(100vh - 100px);
+        /* Tighter fit for mobile */
         border-radius: var(--radius-md);
+        margin: 0;
+        border: none;
+        /* Let parent container handle boxing on mobile */
     }
 
     .sidebar {
@@ -102,14 +110,17 @@
 
     .main {
         display: none;
+        background: var(--color-bg-primary);
     }
 
     .main.active {
         display: flex;
         width: 100%;
+        height: 100%;
     }
 
     .chatArea {
         width: 100%;
+        height: 100%;
     }
 }

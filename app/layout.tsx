@@ -10,6 +10,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Dashboard de Leads',
   description: 'Sistema de gestão de leads',
+  icons: {
+    icon: '/logo-winged-lion.png',
+  },
 }
 
 export default function RootLayout({

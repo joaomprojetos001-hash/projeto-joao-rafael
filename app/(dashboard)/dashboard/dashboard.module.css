@@ -1,10 +1,11 @@
 .dashboard {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xl);
-    max-width: 1400px;
-    margin: 0 auto;
+    gap: var(--spacing-lg);
+    width: 100%;
+    /* Fluid width */
+    margin: 0;
 }
 
 .header {
@@ -33,8 +34,15 @@
 /* Urgent Section */
 .urgentList {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: 1fr;
+    /* Force 1 column on mobile, auto-fit might overflow */
     gap: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+    .urgentList {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
 }
 
 .urgentCard {
@@ -63,8 +71,15 @@
 /* Metrics Grid */
 .metricsGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: 1fr;
+    /* Full width on mobile */
     gap: var(--spacing-md);
+}
+
+@media (min-width: 640px) {
+    .metricsGrid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
 }
 
 .metricCard {
@@ -106,8 +121,20 @@
 /* Pipeline Grid */
 .pipelineGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--spacing-md);
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+}
+
+@media (min-width: 480px) {
+    .pipelineGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .pipelineGrid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
 }
 
 .pipelineCard {
@@ -215,10 +242,25 @@
 }
 
 @media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+        text-align: left;
+    }
+
+    .header>div:last-child {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        justify-content: flex-start;
+    }
+
     .timeFilterContainer {
         overflow-x: auto;
         flex-wrap: nowrap;
         padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
     }
 
     .timeFilterButton {
@@ -228,5 +270,11 @@
 
     .customDatePicker {
         flex-direction: column;
+    }
+
+    .sectionHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
     }
 }

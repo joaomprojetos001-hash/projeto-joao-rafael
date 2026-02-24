@@ -9,12 +9,14 @@
 
 .mainContent {
     flex: 1;
-    margin-left: 280px;
-    padding: var(--spacing-2xl);
+    margin-left: clamp(280px, 20vw, 350px);
+    padding: var(--spacing-lg);
     animation: fadeIn 0.4s ease-out;
     position: relative;
     z-index: 10;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--color-bg-secondary);
+    /* Balanced with global background */
 }
 
 .mainContent.collapsed {
@@ -51,9 +53,9 @@
 
 .mobileBrand {
     font-weight: 700;
-    font-size: 1.125rem;
+    font-size: clamp(1rem, 4vw, 1.25rem);
+    /* Fluid brand text */
     color: var(--color-gold-primary);
-    /* Gold */
 }
 
 /* Responsive */
@@ -78,7 +80,16 @@
         /* Force margin 0 on mobile regardless of collapse */
         margin-top: 60px;
         /* Space for header */
-        padding: var(--spacing-lg);
+        padding: var(--spacing-md);
+        /* Reduced padding for mobile */
         min-height: calc(100vh - 60px);
+    }
+
+    .mainContent>div {
+        background: var(--color-bg-primary);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--color-border);
+        min-height: calc(100vh - 60px - 2 * var(--spacing-md));
+        box-shadow: var(--shadow-sm);
     }
 }
