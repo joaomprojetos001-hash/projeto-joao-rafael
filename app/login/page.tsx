@@ -27,8 +27,8 @@ export default function LoginPage() {
 }
 
 function LoginContent() {
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
+    const [email, setEmail] = useState('comercial@psc-ts.com.br')
+    const [password, setPassword] = useState('Mc160384*')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const router = useRouter()

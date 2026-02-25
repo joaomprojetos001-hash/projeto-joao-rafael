@@ -54,18 +54,26 @@ export default function AdminApprovals() {
     }
 
     const deleteUser = async (userId: string) => {
-        if (!confirm('Tem certeza que deseja remover este usuário?')) return
+        if (!confirm('Tem certeza que deseja remover este usuário por completo? Esta ação não pode ser desfeita.')) return
 
-        const supabase = createClient()
-        const { error } = await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', userId)
+        try {
+            const response = await fetch('/api/admin/delete-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            })
 
-        if (!error) {
-            setUsers(users.filter(u => u.id !== userId))
-        } else {
-            alert('Erro ao remover usuário')
+            const data = await response.json()
+
+            if (response.ok && data.success) {
+                setUsers(users.filter(u => u.id !== userId))
+                alert('Usuário removido com sucesso!')
+            } else {
+                throw new Error(data.error || 'Erro ao remover usuário')
+            }
+        } catch (err: any) {
+            console.error('Delete error:', err)
+            alert(err.message || 'Erro ao remover usuário. Verifique se a chave de serviço está configurada.')
         }
     }
 
