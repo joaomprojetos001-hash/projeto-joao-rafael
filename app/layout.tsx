@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   title: 'Dashboard de Leads',
   description: 'Sistema de gestão de leads',
   icons: {
-    icon: '/logo-winged-lion.png',
-    apple: '/logo-winged-lion.png',
+    icon: '/assets/Black And White Modern Vintage Retro Brand Logo.png',
+    apple: '/assets/Black And White Modern Vintage Retro Brand Logo.png',
   },
 }
 
