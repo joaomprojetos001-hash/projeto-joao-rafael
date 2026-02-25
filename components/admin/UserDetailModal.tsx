@@ -190,9 +190,7 @@ export default function UserDetailModal({ userId, isOpen, onClose, onUpdate }: P
                                 <div style={{ fontWeight: 'bold', color: user.role === 'admin' ? 'var(--color-primary)' : 'var(--color-text-primary)' }}>
                                     {user.role === 'admin' ? 'ADMINISTRADOR' : 'AGENTE'}
                                 </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-                                    ID: {user.id}
-                                </div>
+                                {/* ID hidden for cleaner UI */}
                             </div>
                         </div>
 

@@ -152,8 +152,7 @@ export default function AdminApprovals() {
                                 </td>
                                 <td data-label="Info">
                                     <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-                                        {user.phone}<br />
-                                        ID: {user.id.slice(0, 8)}...
+                                        {user.phone}
                                     </div>
                                 </td>
                                 <td data-label="Status">
