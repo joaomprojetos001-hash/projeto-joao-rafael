@@ -288,39 +288,21 @@ export default function DashboardPage() {
                     <h1>Dashboard</h1>
                     <p className="text-secondary">Visão geral em tempo real</p>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div className={styles.companyFilterContainer}>
                     <button
-                        className="btn"
-                        style={{
-                            backgroundColor: selectedCompany === 'PSC_TS' ? 'var(--color-gold)' : 'transparent',
-                            color: selectedCompany === 'PSC_TS' ? 'black' : 'var(--color-text-secondary)',
-                            border: '1px solid var(--color-border)',
-                            fontWeight: selectedCompany === 'PSC_TS' ? 'bold' : 'normal'
-                        }}
+                        className={`${styles.companyBtn} ${selectedCompany === 'PSC_TS' ? styles.companyBtnActivePsc : ''}`}
                         onClick={() => setCompany('PSC_TS')}
                     >
                         PSC+TS
                     </button>
                     <button
-                        className="btn"
-                        style={{
-                            backgroundColor: selectedCompany === 'PSC_CONSORCIOS' ? '#10b981' : 'transparent',
-                            color: selectedCompany === 'PSC_CONSORCIOS' ? 'white' : 'var(--color-text-secondary)',
-                            border: '1px solid var(--color-border)',
-                            fontWeight: selectedCompany === 'PSC_CONSORCIOS' ? 'bold' : 'normal'
-                        }}
+                        className={`${styles.companyBtn} ${selectedCompany === 'PSC_CONSORCIOS' ? styles.companyBtnActiveConsorcios : ''}`}
                         onClick={() => setCompany('PSC_CONSORCIOS')}
                     >
                         PSC Consórcios
                     </button>
                     <button
-                        className="btn"
-                        style={{
-                            backgroundColor: selectedCompany === 'ALL' ? '#6366f1' : 'transparent',
-                            color: selectedCompany === 'ALL' ? 'white' : 'var(--color-text-secondary)',
-                            border: '1px solid var(--color-border)',
-                            fontWeight: selectedCompany === 'ALL' ? 'bold' : 'normal'
-                        }}
+                        className={`${styles.companyBtn} ${selectedCompany === 'ALL' ? styles.companyBtnActiveAll : ''}`}
                         onClick={() => setCompany('ALL')}
                     >
                         Todos
