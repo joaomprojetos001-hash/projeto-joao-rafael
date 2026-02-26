@@ -2,152 +2,195 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    /* If this is the 'Follow Up' block, it needs to be black */
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    background: var(--color-bg-primary);
 }
 
 .header {
     padding: var(--spacing-md);
     border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
 }
 
 .header h3 {
-    font-size: 1.125rem;
-    margin-bottom: var(--spacing-sm);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-md);
     color: var(--color-text-primary);
+    letter-spacing: -0.5px;
+}
+
+/* Search Bar Container */
+.searchContainer {
+    position: relative;
+    margin-bottom: var(--spacing-md);
+}
+
+.searchIcon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-secondary);
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 10px 12px 10px 40px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.searchInput:focus {
+    border-color: var(--color-gold-primary);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1);
 }
 
 .filters {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+}
+
+.filters::-webkit-scrollbar {
+    display: none;
 }
 
 .filterBtn {
     font-size: 0.75rem;
-    padding: 4px 8px;
+    font-weight: 500;
+    padding: 6px 12px;
     border-radius: var(--radius-full);
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     color: var(--color-text-secondary);
-    transition: all var(--transition-fast);
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .filterBtn.active {
     background: var(--color-gold-primary);
     color: white;
     border-color: var(--color-gold-primary);
+    box-shadow: 0 2px 6px rgba(212, 175, 55, 0.3);
 }
 
 .list {
     flex: 1;
     overflow-y: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    background: var(--color-bg-primary);
 }
 
 .list::-webkit-scrollbar {
-    display: none;
+    width: 6px;
+}
+
+.list::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 10px;
 }
 
 .item {
     display: flex;
-    gap: 12px;
-    padding: 16px;
+    gap: 14px;
+    padding: 14px 16px;
     cursor: pointer;
-    transition: all 0.2s;
-    border-bottom: 1px solid var(--color-border);
-    align-items: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-bottom: 1px solid var(--color-border-subtle, rgba(0, 0, 0, 0.05));
+    position: relative;
     background: var(--color-bg-primary);
 }
 
 .item:hover {
     background: var(--color-bg-hover);
-    border-left: 3px solid var(--color-gold-primary);
 }
 
 .item.selected {
-    background: var(--color-bg-secondary);
-    border-left: 3px solid var(--color-gold-primary);
+    background: var(--color-surface-hover);
+    border-left: 4px solid var(--color-gold-primary);
+}
+
+/* Avatar with Status Dot wrapper */
+.avatarWrapper {
+    position: relative;
+    flex-shrink: 0;
 }
 
 .avatar {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
     color: white;
-    flex-shrink: 0;
+    font-size: 1.125rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Avatar colors by status */
-/* Em Atendimento = Blue */
-.avatar[data-status="Em Atendimento"] {
-    background: linear-gradient(135deg, #4A90E2 0%, #2C5AA0 100%);
+.statusDot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--color-bg-primary);
+    background: #10b981;
+    /* Green for online/active */
 }
 
-/* Não Respondido = Red */
-.avatar[data-status="Não Respondido"] {
-    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+/* Status variants */
+.statusDot[data-status="inactive"] {
+    background: #94a3b8;
 }
 
-/* Em Negociação = Orange */
-.avatar[data-status="Em Negociação"] {
-    background: linear-gradient(135deg, #F6AD55 0%, #ED8936 100%);
+.statusDot[data-status="urgent"] {
+    background: #ef4444;
 }
 
-/* Fechado = Green (per user request) */
-.avatar[data-status="Fechado"] {
-    background: linear-gradient(135deg, #48BB78 0%, #38A169 100%);
-}
-
-/* Venda Perdida = Black/Dark Gray */
-.avatar[data-status="Venda Perdida"] {
-    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-}
-
-/* Default fallback */
-.avatar:not([data-status]) {
-    background: linear-gradient(135deg, #718096 0%, #4A5568 100%);
-}
-
-.info {
+.leadInfo {
     flex: 1;
     min-width: 0;
-    color: var(--color-text-primary);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-.topRow {
+.leadHeader {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
     margin-bottom: 4px;
 }
 
-.name {
+.leadName {
     font-weight: 600;
     font-size: 0.9375rem;
+    color: var(--color-text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--color-text-primary);
+    max-width: 160px;
 }
 
 .time {
-    font-size: 0.75rem;
-    color: var(--color-text-tertiary);
+    font-size: 0.7rem;
+    color: var(--color-text-secondary);
+    opacity: 0.8;
 }
 
-.leadTime {
-    font-size: 0.75rem;
-    color: var(--color-text-tertiary);
-    margin-left: 4px;
-}
-
-.bottomRow {
+.leadDetails {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -159,77 +202,68 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-transform: capitalize;
+    max-width: 140px;
+}
+
+.badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.companyBadge {
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.badgePsc {
+    background: #10b981;
+    color: white;
+}
+
+.badgeTs {
+    background: var(--color-gold-primary);
+    color: white;
+}
+
+.unreadBadge {
+    width: 6px;
+    height: 6px;
+    background: #3b82f6;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .urgentBadge {
-    width: 16px;
-    height: 16px;
-    background: var(--color-error);
+    background: #ef4444;
     color: white;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
+    font-weight: 900;
 }
 
 .loading {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-xl);
     text-align: center;
-    color: var(--color-text-card-secondary);
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
 }
 
-/* Human Attended Badge - green checkmark */
-.humanAttendedBadge {
+/* Human Attended Markers */
+.attended {
     color: #10b981;
-    font-size: 0.875rem;
-    margin-left: 4px;
-    font-weight: bold;
+    stroke-width: 3px;
 }
 
-/* Human NOT Attended Badge - red X */
-.humanNotAttendedBadge {
+.notAttended {
     color: #ef4444;
-    font-size: 0.875rem;
-    margin-left: 4px;
-    font-weight: bold;
-}
-
-/* Unread Conversation Badge - blue dot */
-.unreadBadge {
-    width: 10px;
-    height: 10px;
-    background: #3b82f6;
-    border-radius: 50%;
-    flex-shrink: 0;
-    margin-left: auto;
-}
-
-.leadInfo {
-    flex: 1;
-    min-width: 0;
-}
-
-.leadHeader {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.leadName {
-    font-weight: 600;
-    font-size: 0.9375rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--color-text-primary);
-}
-
-.leadStatus {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
+    stroke-width: 3px;
 }

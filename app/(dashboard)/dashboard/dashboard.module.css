@@ -1,3 +1,7 @@
+/* ============================================
+   DASHBOARD MODULE CSS - Mobile-First
+   ============================================ */
+
 .dashboard {
     padding: var(--spacing-lg);
     display: flex;
@@ -9,172 +13,109 @@
 
 @media (max-width: 768px) {
     .dashboard {
-        padding: var(--spacing-md) 0;
-        /* Remove side padding on mobile, layout already has it */
+        padding: var(--spacing-md);
+        gap: var(--spacing-md);
     }
 }
+
+/* ============================================
+   HEADER
+   ============================================ */
 
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
 }
 
-.sectionHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-md);
-}
-
-.sectionHeader h2 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--color-text-primary);
-    /* Keep section headers dark on white bg */
-}
-
-/* Urgent Section */
-.urgentList {
-    display: grid;
-    grid-template-columns: 1fr;
-    /* Force 1 column on mobile, auto-fit might overflow */
-    gap: var(--spacing-md);
-}
-
-@media (min-width: 768px) {
-    .urgentList {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    }
-}
-
-.urgentCard {
-    border-left: 4px solid var(--color-warning);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
-    color: var(--color-text-primary);
-}
-
-.urgentHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-}
-
-.emptyState {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: var(--spacing-xl);
-    background: var(--color-bg-secondary);
-    border-radius: var(--radius-lg);
-    border: 1px dashed var(--color-border);
-    color: var(--color-text-secondary);
-}
-
-/* Metrics Grid */
-.metricsGrid {
-    display: grid;
-    grid-template-columns: 1fr;
-    /* Full width on mobile */
-    gap: var(--spacing-md);
-}
-
-@media (min-width: 640px) {
-    .metricsGrid {
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    }
-}
-
-.metricCard {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-lg);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-}
-
-.metricIcon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    background: var(--gradient-gold);
-    box-shadow: var(--shadow-md);
-}
-
-.metricIcon svg {
-    color: white;
-    width: 24px;
-    height: 24px;
-}
-
-.metricValue {
+.header h1 {
     font-size: 1.5rem;
     font-weight: 700;
-    margin: 4px 0;
-    color: var(--color-text-primary);
 }
 
-/* Pipeline Grid */
-.pipelineGrid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--spacing-sm);
-}
+@media (max-width: 768px) {
+    .header {
+        gap: var(--spacing-sm);
+    }
 
-@media (min-width: 480px) {
-    .pipelineGrid {
-        grid-template-columns: repeat(2, 1fr);
+    .header h1 {
+        font-size: 1.25rem;
     }
 }
 
-@media (min-width: 1024px) {
-    .pipelineGrid {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    }
-}
+/* ============================================
+   COMPANY FILTER
+   ============================================ */
 
-.pipelineCard {
-    text-align: center;
-    padding: var(--spacing-lg);
+.companyFilterContainer {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-sm);
-    background: var(--color-surface);
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+}
+
+.companyFilterContainer::-webkit-scrollbar {
+    display: none;
+}
+
+.companyBtn {
+    padding: 6px 14px;
+    border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-}
-
-.pipelineCount {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--color-text-primary);
-}
-
-.loading {
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%;
-    color: var(--color-text-secondary);
+    min-height: 36px;
 }
 
-/* Time Filter Section */
+.companyBtnActivePsc {
+    background-color: var(--color-gold) !important;
+    color: black !important;
+    font-weight: bold;
+    border-color: transparent !important;
+}
+
+.companyBtnActiveConsorcios {
+    background-color: #10b981 !important;
+    color: white !important;
+    font-weight: bold;
+    border-color: transparent !important;
+}
+
+.companyBtnActiveAll {
+    background-color: #6366f1 !important;
+    color: white !important;
+    font-weight: bold;
+    border-color: transparent !important;
+}
+
+/* ============================================
+   TIME FILTER SECTION (Desktop only)
+   ============================================ */
+
 .timeFilterSection {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+    .timeFilterSection {
+        display: none;
+        /* Moved into metrics header on mobile */
+    }
 }
 
 .timeFilterContainer {
@@ -193,6 +134,8 @@
     font-size: 0.875rem;
     font-weight: 500;
     transition: all 0.2s ease;
+    white-space: nowrap;
+    min-height: 38px;
 }
 
 .timeFilterButton:hover {
@@ -210,6 +153,10 @@
 .timeFilterActive:hover {
     color: black;
 }
+
+/* ============================================
+   CUSTOM DATE PICKER
+   ============================================ */
 
 .customDatePicker {
     display: flex;
@@ -248,99 +195,313 @@
 }
 
 @media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-md);
-        text-align: left;
-    }
-
-    .header>div:last-child {
-        width: 100%;
-        overflow-x: auto;
-        padding-bottom: 8px;
-        justify-content: flex-start;
-        display: flex;
-        gap: 8px;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .timeFilterContainer {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        padding-bottom: 8px;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .timeFilterButton {
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
     .customDatePicker {
         flex-direction: column;
     }
+}
 
-    .sectionHeader {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-sm);
+/* ============================================
+   SECTION HEADER (shared)
+   ============================================ */
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+    gap: var(--spacing-sm);
+}
+
+.sectionHeader h2 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ============================================
+   MOBILE TIME FILTER (inside metrics header)
+   ============================================ */
+
+.mobileTimeFilter {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .mobileTimeFilter {
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        flex-shrink: 1;
+        min-width: 0;
+    }
+
+    .mobileTimeFilter::-webkit-scrollbar {
+        display: none;
     }
 }
 
-/* Company Filter Styles */
-.companyFilterContainer {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-}
-
-.companyBtn {
-    padding: 8px 16px;
-    border-radius: var(--radius-md);
+.mobileTimeBtn {
+    padding: 5px 10px;
+    border-radius: 20px;
     border: 1px solid var(--color-border);
-    background: transparent;
+    background: var(--color-bg-secondary);
     color: var(--color-text-secondary);
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: 500;
     transition: all 0.2s ease;
     white-space: nowrap;
+    flex-shrink: 0;
+    min-height: 30px;
+}
+
+.mobileTimeBtnActive {
+    background: var(--gradient-gold);
+    color: black;
+    border-color: transparent;
+    font-weight: 600;
+}
+
+/* ============================================
+   URGENT SECTION
+   ============================================ */
+
+
+.urgentList {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+    .urgentList {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: var(--spacing-md);
+    }
+}
+
+.urgentCard {
+    border-left: 4px solid var(--color-warning);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    color: var(--color-text-primary);
+}
+
+.urgentHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.emptyState {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: var(--spacing-xl);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+/* ============================================
+   METRICS SECTION
+   ============================================ */
+
+
+.metricsGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+}
+
+@media (min-width: 640px) {
+    .metricsGrid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: var(--spacing-md);
+    }
+}
+
+/* Desktop metric card */
+.metricCard {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Mobile metric card - reference style: label top-left, value bottom-left, icon top-right */
+@media (max-width: 639px) {
+    .metricCard {
+        flex-direction: row;
+        align-items: center;
+        padding: 16px;
+        position: relative;
+        border-left: 4px solid var(--color-gold-primary);
+        gap: 0;
+    }
+}
+
+.metricIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--gradient-gold);
+    box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 639px) {
+    .metricIcon {
+        width: 44px;
+        height: 44px;
+        margin-left: auto;
+        order: 2;
+    }
+}
+
+.metricIcon svg {
+    color: white;
+    width: 22px;
+    height: 22px;
+}
+
+.metricContent {
     flex: 1;
+}
+
+@media (max-width: 639px) {
+    .metricContent {
+        order: 1;
+    }
+}
+
+.metricValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 2px 0;
+    color: var(--color-text-primary);
+}
+
+@media (max-width: 639px) {
+    .metricValue {
+        font-size: 1.375rem;
+    }
+}
+
+/* ============================================
+   PIPELINE SECTION
+   ============================================ */
+
+
+.pipelineGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+    .pipelineGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md);
+    }
+}
+
+@media (min-width: 1024px) {
+    .pipelineGrid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+}
+
+/* Mobile pipeline card - reference style: label top-center, big number center, badge bottom-center */
+.pipelineCard {
+    text-align: center;
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border-bottom: 3px solid var(--color-border);
+    transition: border-color 0.2s ease;
+}
+
+@media (max-width: 767px) {
+    .pipelineCard {
+        padding: 16px var(--spacing-lg);
+        flex-direction: row;
+        text-align: left;
+        align-items: center;
+        gap: var(--spacing-md);
+    }
+}
+
+.pipelineCardContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+}
+
+@media (max-width: 767px) {
+    .pipelineCardContent {
+        align-items: flex-start;
+        gap: 4px;
+    }
+}
+
+.pipelineCount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    line-height: 1;
+}
+
+@media (max-width: 767px) {
+    .pipelineCount {
+        font-size: 1.75rem;
+    }
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.loading {
     display: flex;
     justify-content: center;
     align-items: center;
+    height: 100%;
+    color: var(--color-text-secondary);
 }
 
-.companyBtnActivePsc {
-    background-color: var(--color-gold) !important;
-    color: black !important;
-    font-weight: bold;
-    border-color: transparent !important;
+/* ============================================
+   UTILITIES
+   ============================================ */
+
+.desktopOnly {
+    display: inline;
 }
 
-.companyBtnActiveConsorcios {
-    background-color: #10b981 !important;
-    color: white !important;
-    font-weight: bold;
-    border-color: transparent !important;
-}
-
-.companyBtnActiveAll {
-    background-color: #6366f1 !important;
-    color: white !important;
-    font-weight: bold;
-    border-color: transparent !important;
-}
-
-@media (max-width: 480px) {
-    .companyFilterContainer {
-        overflow-x: auto;
-        padding-bottom: 4px;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .companyBtn {
-        flex: 0 0 auto;
+@media (max-width: 768px) {
+    .desktopOnly {
+        display: none;
     }
 }

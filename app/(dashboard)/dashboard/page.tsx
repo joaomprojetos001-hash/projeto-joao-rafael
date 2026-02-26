@@ -94,6 +94,33 @@ function getDateRange(period: TimePeriod, customStart?: string, customEnd?: stri
     }
 }
 
+// Icon SVGs
+function IconLeads() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+        </svg>
+    )
+}
+
+function IconActivity() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+    )
+}
+
+function IconCheck() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+    )
+}
+
 export default function DashboardPage() {
     const router = useRouter()
     const [loading, setLoading] = useState(true)
@@ -186,7 +213,7 @@ export default function DashboardPage() {
             // 2. Leads created today (always today, not affected by period filter)
             const today = new Date().toISOString().split('T')[0]
             let queryToday = supabase.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', today)
-            queryToday = applyFilter(queryToday, false) // No date filter on update_status_at for this
+            queryToday = applyFilter(queryToday, false)
             const { count: leadsToday } = await queryToday
 
             // 3. Fechados (filtered by period)
@@ -194,7 +221,7 @@ export default function DashboardPage() {
             queryClosed = applyFilter(queryClosed)
             const { count: closedTotal } = await queryClosed
 
-            // 4. Leads Urgentes (Top 3, ALWAYS visible regardless of company/date filter)
+            // 4. Leads Urgentes (Top 3, always visible regardless of company/date filter)
             let queryUrgents = supabase
                 .from('leads')
                 .select('*')
@@ -202,7 +229,6 @@ export default function DashboardPage() {
                 .neq('status', 'em_atendimento')
                 .order('updated_at', { ascending: false })
                 .limit(3)
-            // Only apply product filter for non-admins (no company or date filter for urgent leads)
             if (!isAdmin && productIds && productIds.length > 0) {
                 queryUrgents = queryUrgents.in('produto_interesse', productIds)
             } else if (!isAdmin && (!productIds || productIds.length === 0)) {
@@ -276,17 +302,28 @@ export default function DashboardPage() {
         '7days': '7 dias',
         '15days': '15 dias',
         '1month': '1 mês',
-        'custom': 'Personalizado'
+        'custom': 'Custom'
+    }
+
+    // Compact labels for mobile pills
+    const periodLabelsMobile: Record<TimePeriod, string> = {
+        'today': 'Hoje',
+        'yesterday': 'Ontem',
+        '7days': '7 Dias',
+        '15days': '15 Dias',
+        '1month': '30 Dias',
+        'custom': 'Custom'
     }
 
     if (loading) return <div className={styles.loading}>Carregando dashboard...</div>
 
     return (
         <div className={styles.dashboard}>
+            {/* Header: Title + Company Filter */}
             <header className={styles.header}>
                 <div>
                     <h1>Dashboard</h1>
-                    <p className="text-secondary">Visão geral em tempo real</p>
+                    <p className="text-sm text-muted">Visão geral em tempo real</p>
                 </div>
                 <div className={styles.companyFilterContainer}>
                     <button
@@ -299,7 +336,7 @@ export default function DashboardPage() {
                         className={`${styles.companyBtn} ${selectedCompany === 'PSC_CONSORCIOS' ? styles.companyBtnActiveConsorcios : ''}`}
                         onClick={() => setCompany('PSC_CONSORCIOS')}
                     >
-                        PSC Consórcios
+                        Consórcios
                     </button>
                     <button
                         className={`${styles.companyBtn} ${selectedCompany === 'ALL' ? styles.companyBtnActiveAll : ''}`}
@@ -310,7 +347,7 @@ export default function DashboardPage() {
                 </div>
             </header>
 
-            {/* Time Period Filter */}
+            {/* Time Period Filter (Desktop only - hidden on mobile) */}
             <section className={styles.timeFilterSection}>
                 <div className={styles.timeFilterContainer}>
                     {(['today', 'yesterday', '7days', '15days', '1month', 'custom'] as TimePeriod[]).map((period) => (
@@ -373,7 +410,7 @@ export default function DashboardPage() {
                                     <span className="badge badge-warning">Urgente</span>
                                 </div>
                                 <p className="text-sm text-secondary" style={{ marginTop: 'var(--spacing-sm)' }}>
-                                    Status Atual: <span style={{ textTransform: 'capitalize' }}>{lead.status.replace('_', ' ')}</span>
+                                    Status: <span style={{ textTransform: 'capitalize' }}>{lead.status.replace('_', ' ')}</span>
                                 </p>
                                 <button
                                     className="btn btn-primary"
@@ -399,44 +436,56 @@ export default function DashboardPage() {
             <section className={styles.metricsSection}>
                 <div className={styles.sectionHeader}>
                     <h2>📊 Métricas</h2>
-                    <span className="text-sm text-muted">{periodLabels[selectedPeriod]}</span>
+                    {/* Mobile pills filter - only visible on mobile */}
+                    <div className={styles.mobileTimeFilter}>
+                        {(['today', '7days', '1month', 'custom'] as TimePeriod[]).map((period) => (
+                            <button
+                                key={period}
+                                className={`${styles.mobileTimeBtn} ${selectedPeriod === period ? styles.mobileTimeBtnActive : ''}`}
+                                onClick={() => setSelectedPeriod(period)}
+                            >
+                                {periodLabelsMobile[period]}
+                            </button>
+                        ))}
+                    </div>
+                    {/* Desktop label */}
+                    <span className={`text-sm text-muted ${styles.desktopOnly}`}>{periodLabels[selectedPeriod]}</span>
                 </div>
+
                 <div className={styles.metricsGrid}>
+                    {/* Total Leads */}
                     <div className={`card ${styles.metricCard}`}>
-                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-gold)' }}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                        </div>
                         <div className={styles.metricContent}>
                             <p className="text-sm text-secondary">Total de Leads</p>
                             <h3 className={styles.metricValue}>{metrics.totalLeads}</h3>
                             <p className="text-xs text-muted">+{metrics.leadsToday} hoje</p>
                         </div>
+                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-gold)' }}>
+                            <IconLeads />
+                        </div>
                     </div>
 
+                    {/* Taxa Conclusão */}
                     <div className={`card ${styles.metricCard}`}>
-                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-gold)' }}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                            </svg>
-                        </div>
                         <div className={styles.metricContent}>
                             <p className="text-sm text-secondary">Taxa Conclusão</p>
                             <h3 className={styles.metricValue}>{metrics.closureRate}</h3>
                             <p className="text-xs" style={{ color: 'var(--color-success)' }}>{periodLabels[selectedPeriod]}</p>
                         </div>
+                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-gold)' }}>
+                            <IconActivity />
+                        </div>
                     </div>
 
+                    {/* Fechados */}
                     <div className={`card ${styles.metricCard}`}>
-                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-blue)' }}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                            </svg>
-                        </div>
                         <div className={styles.metricContent}>
                             <p className="text-sm text-secondary">Fechados</p>
                             <h3 className={styles.metricValue}>{metrics.closedTotal}</h3>
                             <p className="text-xs" style={{ color: 'var(--color-success)' }}>{periodLabels[selectedPeriod]}</p>
+                        </div>
+                        <div className={styles.metricIcon} style={{ background: 'var(--gradient-blue)' }}>
+                            <IconCheck />
                         </div>
                     </div>
                 </div>
@@ -449,34 +498,73 @@ export default function DashboardPage() {
                     <button onClick={() => router.push('/pipeline')} className="btn btn-ghost">Ver Detalhes →</button>
                 </div>
                 <div className={styles.pipelineGrid}>
-                    <div className={`card ${styles.pipelineCard}`}>
-                        <h4>Em Atendimento</h4>
-                        <p className={styles.pipelineCount}>{pipelineStats.atendimento}</p>
-                        <span className="badge badge-primary">Ativo</span>
-                    </div>
-                    <div className={`card ${styles.pipelineCard}`}>
-                        <h4>Não Respondidos</h4>
-                        <p className={styles.pipelineCount}>{pipelineStats.nao_respondido}</p>
-                        <span className="badge badge-warning">Atenção</span>
-                    </div>
-                    <div className={`card ${styles.pipelineCard}`}>
-                        <h4>Em Negociação</h4>
-                        <p className={styles.pipelineCount}>{pipelineStats.negociacao}</p>
-                        <span className="badge badge-info">Progresso</span>
-                    </div>
-                    <div className={`card ${styles.pipelineCard}`}>
-                        <h4>Fechados</h4>
-                        <p className={styles.pipelineCount}>{pipelineStats.fechado}</p>
-                        <span className="badge badge-success">Sucesso</span>
-                    </div>
-                    <div className={`card ${styles.pipelineCard}`}>
-                        <h4>Venda Perdida</h4>
-                        <p className={styles.pipelineCount}>{pipelineStats.venda_perdida}</p>
-                        <span className="badge" style={{ background: '#71717a', color: 'white' }}>Perdido</span>
-                    </div>
+                    <PipelineCard
+                        label="Em Atendimento"
+                        count={pipelineStats.atendimento}
+                        badgeClass="badge badge-primary"
+                        badgeLabel="Ativo"
+                        accentColor="#4A90E2"
+                    />
+                    <PipelineCard
+                        label="Não Respondidos"
+                        count={pipelineStats.nao_respondido}
+                        badgeClass="badge badge-warning"
+                        badgeLabel="Atenção"
+                        accentColor="#F6AD55"
+                    />
+                    <PipelineCard
+                        label="Em Negociação"
+                        count={pipelineStats.negociacao}
+                        badgeClass="badge badge-info"
+                        badgeLabel="Progresso"
+                        accentColor="#9F7AEA"
+                    />
+                    <PipelineCard
+                        label="Fechados"
+                        count={pipelineStats.fechado}
+                        badgeClass="badge badge-success"
+                        badgeLabel="Sucesso"
+                        accentColor="#48BB78"
+                    />
+                    <PipelineCard
+                        label="Venda Perdida"
+                        count={pipelineStats.venda_perdida}
+                        badgeClass="badge"
+                        badgeLabel="Perdido"
+                        accentColor="#71717a"
+                    />
                 </div>
             </section>
 
+        </div>
+    )
+}
+
+function PipelineCard({
+    label,
+    count,
+    badgeClass,
+    badgeLabel,
+    accentColor
+}: {
+    label: string
+    count: number
+    badgeClass: string
+    badgeLabel: string
+    accentColor: string
+}) {
+    return (
+        <div
+            className={`card ${styles.pipelineCard}`}
+            style={{ borderBottomColor: accentColor }}
+        >
+            <div className={styles.pipelineCardContent}>
+                <h4 style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>{label}</h4>
+                <p className={styles.pipelineCount}>{count}</p>
+                <span className={badgeClass} style={badgeLabel === 'Perdido' ? { background: '#71717a20', color: '#71717a' } : undefined}>
+                    {badgeLabel}
+                </span>
+            </div>
         </div>
     )
 }

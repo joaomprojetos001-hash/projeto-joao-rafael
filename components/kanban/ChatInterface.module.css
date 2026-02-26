@@ -109,21 +109,28 @@
 }
 
 .sendButton {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    background: var(--color-primary);
+    background: var(--color-gold-primary);
     color: white;
+    border: none;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.1s;
     flex-shrink: 0;
+    transition: transform 0.15s ease, background 0.15s ease;
+    box-shadow: 0 2px 8px rgba(218, 165, 32, 0.4);
+}
+
+.sendButton svg {
+    stroke: white;
 }
 
 .sendButton:hover:not(:disabled) {
-    transform: scale(1.05);
-    background: var(--color-primary-hover);
+    transform: scale(1.07);
+    background: var(--color-gold-dark);
 }
 
 .sendButton:active:not(:disabled) {
@@ -131,8 +138,9 @@
 }
 
 .sendButton:disabled {
-    opacity: 0.5;
+    opacity: 0.45;
     cursor: not-allowed;
+    box-shadow: none;
 }
 
 /* Attach Button */
