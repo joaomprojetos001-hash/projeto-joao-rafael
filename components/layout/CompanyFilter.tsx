@@ -48,10 +48,10 @@ export function CompanyFilter() {
                     alignItems: 'center',
                     gap: '8px',
                     padding: '8px 12px',
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    backgroundColor: 'var(--color-bg-tertiary)',
+                    border: '1px solid var(--color-border)',
                     borderRadius: '8px',
-                    color: 'white',
+                    color: 'var(--color-text-primary)',
                     cursor: 'pointer',
                     width: '100%',
                     justifyContent: 'space-between'
@@ -88,12 +88,12 @@ export function CompanyFilter() {
                     left: 0,
                     right: 0,
                     marginTop: '4px',
-                    backgroundColor: '#1a1a1a',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    border: '1px solid var(--color-border)',
                     borderRadius: '8px',
                     overflow: 'hidden',
                     zIndex: 50,
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)'
+                    boxShadow: 'var(--shadow-card, 0 4px 6px -1px rgba(0, 0, 0, 0.3))'
                 }}>
                     {allowedCompanies.map(tag => (
                         <button
@@ -109,14 +109,14 @@ export function CompanyFilter() {
                                 width: '100%',
                                 padding: '10px 12px',
                                 border: 'none',
-                                backgroundColor: selectedCompany === tag ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                color: selectedCompany === tag ? 'white' : '#a1a1aa',
+                                backgroundColor: selectedCompany === tag ? 'var(--color-bg-tertiary)' : 'transparent',
+                                color: selectedCompany === tag ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
                                 cursor: 'pointer',
                                 textAlign: 'left',
                                 fontSize: '0.875rem'
                             }}
-                            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
-                            onMouseLeave={e => e.currentTarget.style.backgroundColor = selectedCompany === tag ? 'rgba(255,255,255,0.1)' : 'transparent'}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = selectedCompany === tag ? 'var(--color-bg-tertiary)' : 'transparent'}
                         >
                             <div style={{
                                 width: '8px',

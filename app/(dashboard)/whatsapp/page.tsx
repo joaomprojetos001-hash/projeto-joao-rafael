@@ -9,6 +9,7 @@ interface WhatsAppInstance {
     instance_name: string
     is_connected: boolean
     company_tag?: string
+    number?: string
 }
 
 interface WhatsAppConnectionCardProps {
@@ -16,6 +17,7 @@ interface WhatsAppConnectionCardProps {
     instanceName: string
     initialStatus: boolean
     companyTag: string
+    phoneNumber?: string
     isLocked: boolean // If true, cannot change company (Lines 1 & 2)
     onStatusChange: (id: number, status: boolean) => void
     onCompanyChange: (id: number, tag: string) => void
@@ -26,6 +28,7 @@ function WhatsAppConnectionCard({
     instanceName,
     initialStatus,
     companyTag,
+    phoneNumber,
     isLocked,
     onStatusChange,
     onCompanyChange
@@ -78,14 +81,14 @@ function WhatsAppConnectionCard({
                     <div style={{
                         padding: '8px',
                         background: companyTag === 'PSC_TS' ? 'var(--color-gold)' : '#10b981',
-                        color: companyTag === 'PSC_TS' ? 'black' : 'white',
+                        color: '#1a1a1a',
                         borderRadius: '4px',
                         fontWeight: 'bold',
                         textAlign: 'center',
                         fontSize: '14px'
                     }}>
                         {companyTag === 'PSC_TS' ? 'PSC+TS' : 'PSC Consórcios'}
-                        <span style={{ display: 'block', fontSize: '10px', fontWeight: 'normal', opacity: 0.8 }}>
+                        <span style={{ display: 'block', fontSize: '10px', fontWeight: 'normal', opacity: 0.7 }}>
                             (Fixa)
                         </span>
                     </div>
@@ -108,6 +111,24 @@ function WhatsAppConnectionCard({
                         <option value="PSC_CONSORCIOS" style={{ color: 'black' }}>PSC Consórcios</option>
                     </select>
                 )}
+            </div>
+
+            <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#888' }}>
+                    Número conectado:
+                </label>
+                <div style={{
+                    padding: '8px 12px',
+                    background: 'rgba(218, 165, 32, 0.1)',
+                    border: '1px solid rgba(218, 165, 32, 0.3)',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: phoneNumber ? 'var(--color-gold-primary)' : 'var(--color-text-tertiary)',
+                    letterSpacing: '0.05em'
+                }}>
+                    📱 {phoneNumber || 'Não disponível'}
+                </div>
             </div>
 
             <div className={`${styles.statusIndicator} ${status === 'connected' ? styles.connected : styles.disconnected}`}>
@@ -159,7 +180,7 @@ export default function WhatsAppPage() {
                     setInstances((current) =>
                         current.map((inst) =>
                             inst.id === payload.new.id
-                                ? { ...inst, is_connected: payload.new.is_connected }
+                                ? { ...inst, is_connected: payload.new.is_connected, number: payload.new.number }
                                 : inst
                         )
                     )
@@ -227,6 +248,7 @@ export default function WhatsAppPage() {
                         instanceName={instance.instance_name}
                         initialStatus={instance.is_connected}
                         companyTag={instance.company_tag || 'PSC_TS'}
+                        phoneNumber={instance.number}
                         isLocked={instance.id === 1 || instance.id === 2} // Lock lines 1 and 2
                         onStatusChange={(id, status) => {
                             // Optimistic update if needed, but we rely on realtime/re-fetch or parent state
