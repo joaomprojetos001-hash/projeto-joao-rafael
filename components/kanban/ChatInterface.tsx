@@ -15,19 +15,37 @@ interface Props {
 const cleanMessageContent = (content: string) => {
     if (!content) return content;
 
-    // 1. Try to parse JSON output format from AI agents
+    // 1. Try to parse JSON output format from AI agents or WhatsApp messages with contextInfo
     try {
         if (content.trim().startsWith('{')) {
             const parsed = JSON.parse(content);
+
+            // AI agent output formats
             if (parsed.output?.mensagem) return parsed.output.mensagem;
             if (parsed.mensagem) return parsed.mensagem;
             if (typeof parsed.output === 'string') return parsed.output;
+
+            // WhatsApp message with contextInfo (e.g. ad replies) - extract just the text
+            if (parsed.conversation) return parsed.conversation;
+            if (parsed.extendedTextMessage?.text) return parsed.extendedTextMessage.text;
+            if (parsed.message?.conversation) return parsed.message.conversation;
+            if (parsed.message?.extendedTextMessage?.text) return parsed.message.extendedTextMessage.text;
         }
     } catch {
-        // Not valid JSON
+        // Not valid JSON — try regex-based cleanup below
     }
 
-    // 2. Clean [Used tools:...] prefix
+    // 2. Strip contextInfo JSON blob from partially stringified WhatsApp messages
+    // Matches patterns like: ',"contextInfo":{...}' at the end, or embedded in the string
+    const contextInfoPattern = /[,"]?\s*"contextInfo"\s*:\s*\{[\s\S]*$/;
+    if (contextInfoPattern.test(content)) {
+        let cleaned = content.replace(contextInfoPattern, '').trim();
+        // Also remove any trailing/leading JSON artifacts like quotes, braces, commas
+        cleaned = cleaned.replace(/^[\s{",:]+/, '').replace(/[\s}",':]+$/, '');
+        if (cleaned.length > 0) return cleaned;
+    }
+
+    // 3. Clean [Used tools:...] prefix
     if (content.startsWith('[Used tools:')) {
         let depth = 0;
         let endIndex = -1;
