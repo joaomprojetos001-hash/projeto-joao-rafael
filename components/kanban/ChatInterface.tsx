@@ -26,13 +26,24 @@ const cleanMessageContent = (content: string) => {
             if (typeof parsed.output === 'string') return parsed.output;
 
             // WhatsApp message with contextInfo (e.g. ad replies) - extract just the text
+            if (parsed.text && typeof parsed.text === 'string') return parsed.text;
             if (parsed.conversation) return parsed.conversation;
             if (parsed.extendedTextMessage?.text) return parsed.extendedTextMessage.text;
             if (parsed.message?.conversation) return parsed.message.conversation;
             if (parsed.message?.extendedTextMessage?.text) return parsed.message.extendedTextMessage.text;
         }
     } catch {
-        // Not valid JSON — try regex-based cleanup below
+        // Not valid JSON (e.g. concatenated messages) — try to extract "text" values via regex
+        const textMatches = content.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/g);
+        if (textMatches && textMatches.length > 0) {
+            const texts = textMatches
+                .map(m => {
+                    const match = m.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/)
+                    return match ? match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\') : null
+                })
+                .filter(Boolean);
+            if (texts.length > 0) return texts.join(' | ');
+        }
     }
 
     // 2. Strip contextInfo JSON blob from partially stringified WhatsApp messages
