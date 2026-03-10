@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { ChatMessageRow, ChatMessageContent } from '@/types/chat'
 import styles from './ChatInterface.module.css'
@@ -109,6 +109,14 @@ export default function ChatInterface({ leadId, onBack }: Props) {
     const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null)
     const [uploading, setUploading] = useState(false)
 
+    // Audio recording state
+    const [isRecording, setIsRecording] = useState(false)
+    const [recordingTime, setRecordingTime] = useState(0)
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+    const audioChunksRef = useRef<Blob[]>([])
+    const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
+    const streamRef = useRef<MediaStream | null>(null)
+
     useEffect(() => {
         const fetchLeadData = async () => {
             const supabase = createClient()
@@ -194,6 +202,176 @@ export default function ChatInterface({ leadId, onBack }: Props) {
         }
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
+
+    // Handle paste from clipboard (images)
+    const handlePaste = useCallback((e: React.ClipboardEvent) => {
+        const items = e.clipboardData?.items
+        if (!items) return
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i]
+            if (item.type.startsWith('image/')) {
+                e.preventDefault()
+                const file = item.getAsFile()
+                if (!file) continue
+
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('Imagem muito grande. Máximo: 10MB')
+                    return
+                }
+
+                setSelectedFile(file)
+                setFilePreviewUrl(URL.createObjectURL(file))
+                return
+            }
+        }
+    }, [])
+
+    // ─── Audio Recording ────────────────────────────────────────────────
+    const formatTime = (seconds: number) => {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0')
+        const s = (seconds % 60).toString().padStart(2, '0')
+        return `${m}:${s}`
+    }
+
+    const startRecording = useCallback(async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            streamRef.current = stream
+            audioChunksRef.current = []
+
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                    ? 'audio/webm;codecs=opus'
+                    : 'audio/webm'
+            })
+            mediaRecorderRef.current = mediaRecorder
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunksRef.current.push(e.data)
+            }
+
+            mediaRecorder.start(250) // collect data every 250ms
+            setIsRecording(true)
+            setRecordingTime(0)
+
+            recordingTimerRef.current = setInterval(() => {
+                setRecordingTime(prev => prev + 1)
+            }, 1000)
+        } catch (err) {
+            console.error('Erro ao acessar microfone:', err)
+            alert('Não foi possível acessar o microfone. Verifique as permissões.')
+        }
+    }, [])
+
+    const stopRecordingCleanup = useCallback(() => {
+        if (recordingTimerRef.current) {
+            clearInterval(recordingTimerRef.current)
+            recordingTimerRef.current = null
+        }
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(t => t.stop())
+            streamRef.current = null
+        }
+        setIsRecording(false)
+        setRecordingTime(0)
+    }, [])
+
+    const cancelRecording = useCallback(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop()
+        }
+        stopRecordingCleanup()
+        audioChunksRef.current = []
+    }, [stopRecordingCleanup])
+
+    const sendAudio = useCallback(async () => {
+        if (!mediaRecorderRef.current || !leadPhone) return
+
+        setUploading(true)
+
+        // Stop recording and wait for final data
+        const recorder = mediaRecorderRef.current
+        const audioPromise = new Promise<Blob>((resolve) => {
+            recorder.onstop = () => {
+                const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+                resolve(blob)
+            }
+            if (recorder.state !== 'inactive') recorder.stop()
+        })
+
+        stopRecordingCleanup()
+
+        try {
+            const audioBlob = await audioPromise
+
+            // Convert to base64
+            const base64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader()
+                reader.onload = () => {
+                    const result = reader.result as string
+                    resolve(result.split(',')[1])
+                }
+                reader.onerror = reject
+                reader.readAsDataURL(audioBlob)
+            })
+
+            const mediaMime = 'audio/webm'
+            const mediaType = 'audio' as const
+
+            // Save to DB
+            const newMessage = {
+                session_id: leadPhone,
+                message: {
+                    type: 'ai' as const,
+                    content: '🎤 Áudio',
+                    metadata: {
+                        origin: 'dashboard_human' as const,
+                        mediaType,
+                        mediaDataUri: `data:${mediaMime};base64,${base64}`
+                    }
+                }
+            }
+
+            const supabase = createClient()
+            const { error } = await supabase.from('messages').insert(newMessage)
+
+            if (!error) {
+                // Send to N8N webhook
+                fetch('https://api.fabianoportto.shop/webhook/03376cf8-70a8-4642-adf2-431d9216e51f', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: '🎤 Áudio',
+                        lead_id: leadId,
+                        phone: leadPhone,
+                        company_tag: companyTag,
+                        line_id: companyTag === 'PSC_TS' ? '1' : companyTag === 'PSC_CONSORCIOS' ? '2' : '3',
+                        mediaBase64: base64,
+                        mediaMime,
+                        mediaType
+                    })
+                }).catch(err => console.error('Erro no webhook N8N:', err))
+            } else {
+                console.error('Erro ao enviar áudio:', error)
+                alert('Erro ao enviar áudio')
+            }
+        } catch (err) {
+            console.error('Erro ao processar áudio:', err)
+            alert('Erro ao processar áudio')
+        } finally {
+            setUploading(false)
+            audioChunksRef.current = []
+        }
+    }, [leadPhone, leadId, companyTag, stopRecordingCleanup])
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (recordingTimerRef.current) clearInterval(recordingTimerRef.current)
+            if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop())
+        }
+    }, [])
 
     const BASE64_THRESHOLD = 5 * 1024 * 1024 // 5MB - above this, use Storage
 
@@ -358,6 +536,18 @@ export default function ChatInterface({ leadId, onBack }: Props) {
             )
         }
 
+        if (mediaType === 'audio') {
+            const audioSrc = mediaDataUri || mediaUrl
+            if (audioSrc) {
+                return (
+                    <div className={styles.audioPlayer}>
+                        <audio src={audioSrc} controls preload="metadata" />
+                    </div>
+                )
+            }
+            return null
+        }
+
         if (mediaType === 'document') {
             const docSrc = mediaDataUri || mediaUrl
             return (
@@ -472,40 +662,97 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                     style={{ display: 'none' }}
                 />
 
-                <button
-                    type="button"
-                    className={styles.attachButton}
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Enviar arquivo"
-                    disabled={uploading}
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                    </svg>
-                </button>
+                {isRecording ? (
+                    /* ── Recording Bar ── */
+                    <>
+                        <div className={styles.recordingBar}>
+                            <span className={styles.recordingIndicator} />
+                            <span className={styles.recordingTimer}>{formatTime(recordingTime)}</span>
+                            <span className={styles.recordingLabel}>Gravando áudio...</span>
+                        </div>
+                        <button
+                            type="button"
+                            className={styles.recordingCancel}
+                            onClick={cancelRecording}
+                            title="Cancelar gravação"
+                        >
+                            ✕
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.recordingConfirm}
+                            onClick={sendAudio}
+                            title="Enviar áudio"
+                            disabled={uploading}
+                        >
+                            {uploading ? (
+                                <div className={styles.spinner} />
+                            ) : (
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            )}
+                        </button>
+                    </>
+                ) : (
+                    /* ── Normal Input ── */
+                    <>
+                        <button
+                            type="button"
+                            className={styles.attachButton}
+                            onClick={() => fileInputRef.current?.click()}
+                            title="Enviar arquivo"
+                            disabled={uploading}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                            </svg>
+                        </button>
 
-                <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Digite sua resposta..."
-                    className={styles.input}
-                    disabled={uploading}
-                />
-                <button
-                    type="submit"
-                    className={styles.sendButton}
-                    disabled={(!inputValue.trim() && !selectedFile) || uploading}
-                >
-                    {uploading ? (
-                        <div className={styles.spinner} />
-                    ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="22" y1="2" x2="11" y2="13"></line>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                        </svg>
-                    )}
-                </button>
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onPaste={handlePaste}
+                            placeholder="Digite sua resposta..."
+                            className={styles.input}
+                            disabled={uploading}
+                        />
+
+                        {/* Mic button — shows when no text typed */}
+                        {!inputValue.trim() && !selectedFile ? (
+                            <button
+                                type="button"
+                                className={styles.micButton}
+                                onClick={startRecording}
+                                title="Gravar áudio"
+                                disabled={uploading}
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                                </svg>
+                            </button>
+                        ) : (
+                            <button
+                                type="submit"
+                                className={styles.sendButton}
+                                disabled={(!inputValue.trim() && !selectedFile) || uploading}
+                            >
+                                {uploading ? (
+                                    <div className={styles.spinner} />
+                                ) : (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                )}
+                            </button>
+                        )}
+                    </>
+                )}
             </form>
 
             {showLeadInfo && (

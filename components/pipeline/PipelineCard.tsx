@@ -5,15 +5,46 @@ interface Product {
     nome: string
 }
 
+// Extract clean product ID from potentially dirty values like "Name- UUID;"
+const UUID_REGEX = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+
+function resolveProductName(produtoInteresse: string | null | undefined, products: Product[]): string | null {
+    if (!produtoInteresse) return null
+
+    // 1. Direct UUID match
+    const directMatch = products.find(p => p.id === produtoInteresse)
+    if (directMatch) return directMatch.nome
+
+    // 2. Try to extract UUID from concatenated string (e.g. "Empréstimo Consignado- UUID")
+    const uuidMatch = produtoInteresse.match(UUID_REGEX)
+    if (uuidMatch) {
+        const extracted = products.find(p => p.id === uuidMatch[0])
+        if (extracted) return extracted.nome
+    }
+
+    // 3. Try matching by product name
+    const nameMatch = products.find(p => p.nome.toLowerCase() === produtoInteresse.toLowerCase())
+    if (nameMatch) return nameMatch.nome
+
+    // 4. Try partial name match (value starts with product name)
+    const partialMatch = products.find(p => produtoInteresse.toLowerCase().startsWith(p.nome.toLowerCase()))
+    if (partialMatch) return partialMatch.nome
+
+    // 5. Fallback: display cleaned value (strip UUID if present)
+    return produtoInteresse.replace(UUID_REGEX, '').replace(/[-–;]+\s*$/, '').trim() || null
+}
+
 interface Props {
     lead: any
     products: Product[]
+    lastMessage?: string
     onDragStart: (e: React.DragEvent, id: string) => void
     onView: (lead: any) => void
     onMove?: (leadId: string, newStatus: string) => void
+    onGoToConversation?: (leadId: string) => void
 }
 
-export default function PipelineCard({ lead, products, onDragStart, onView, onMove }: Props) {
+export default function PipelineCard({ lead, products, lastMessage, onDragStart, onView, onMove, onGoToConversation }: Props) {
     const handleMoveClick = (e: React.MouseEvent) => {
         e.stopPropagation()
         if (onMove) {
@@ -21,17 +52,14 @@ export default function PipelineCard({ lead, products, onDragStart, onView, onMo
         }
     }
 
-    // Check if produto_interesse is a UUID or a name
-    const productName = lead.produto_interesse
-        ? (
-            // Try to find by ID first
-            products.find(p => p.id === lead.produto_interesse)?.nome ||
-            // If not found, try to find by name (case where produto_interesse stores the name)
-            products.find(p => p.nome.toLowerCase() === lead.produto_interesse?.toLowerCase())?.nome ||
-            // If still not found but there's a value, just display it directly
-            lead.produto_interesse
-        )
-        : null
+    const handleGoToConversation = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (onGoToConversation) {
+            onGoToConversation(lead.id)
+        }
+    }
+
+    const productName = resolveProductName(lead.produto_interesse, products)
 
     return (
         <div
@@ -67,6 +95,15 @@ export default function PipelineCard({ lead, products, onDragStart, onView, onMo
                 </div>
             )}
 
+            {lastMessage && (
+                <div className={styles.lastMessage}>
+                    <span className={styles.lastMessageIcon}>💬</span>
+                    <span className={styles.lastMessageText}>
+                        {lastMessage.length > 60 ? lastMessage.substring(0, 60) + '...' : lastMessage}
+                    </span>
+                </div>
+            )}
+
             <div className={styles.footer}>
                 <span className={styles.time}>
                     {new Date(lead.updated_at).toLocaleDateString()}
@@ -75,6 +112,11 @@ export default function PipelineCard({ lead, products, onDragStart, onView, onMo
                     {onMove && (
                         <button className={styles.moveBtn} onClick={handleMoveClick}>
                             Mover
+                        </button>
+                    )}
+                    {onGoToConversation && (
+                        <button className={styles.conversaBtn} onClick={handleGoToConversation}>
+                            💬 Conversa
                         </button>
                     )}
                     <button className={styles.actionBtn} onClick={() => onView(lead)}>Ver</button>

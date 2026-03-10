@@ -3,7 +3,7 @@ export interface ChatMessageContent {
     content: string
     metadata?: {
         origin?: 'dashboard_human' | 'n8n_ai'
-        mediaType?: 'image' | 'video' | 'document'
+        mediaType?: 'image' | 'video' | 'document' | 'audio'
         fileName?: string
         mediaDataUri?: string  // data:mime;base64,... for small file inline display
         mediaUrl?: string      // public URL for large files (Supabase Storage)

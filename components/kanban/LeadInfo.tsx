@@ -84,7 +84,29 @@ export default function LeadInfo({ leadId, onClose }: LeadInfoProps) {
 
     if (!lead) return null
 
-    const currentProduct = products.find(p => p.id === lead.produto_interesse)
+    // Robust product matching: handles clean UUIDs, concatenated "Name- UUID", and name-only values
+    const UUID_REGEX = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+    let currentProduct: Product | undefined = undefined
+
+    if (lead.produto_interesse) {
+        // 1. Direct UUID match
+        currentProduct = products.find(p => p.id === lead.produto_interesse)
+
+        // 2. Extract UUID from concatenated string
+        if (!currentProduct) {
+            const uuidMatch = lead.produto_interesse.match(UUID_REGEX)
+            if (uuidMatch) {
+                currentProduct = products.find(p => p.id === uuidMatch[0])
+            }
+        }
+
+        // 3. Match by name
+        if (!currentProduct) {
+            currentProduct = products.find(p =>
+                p.nome.toLowerCase() === lead.produto_interesse.toLowerCase()
+            )
+        }
+    }
 
     return (
         <div className={styles.container}>
@@ -102,9 +124,31 @@ export default function LeadInfo({ leadId, onClose }: LeadInfoProps) {
             </div>
 
             <div className={styles.section}>
-                <h4 className={styles.sectionTitle}>Status</h4>
-                <div className={styles.statusBadge}>
-                    {lead.status.replace('_', ' ')}
+                <h4 className={styles.sectionTitle}>Status / Pipeline</h4>
+                <div className={styles.statusGrid}>
+                    {[
+                        { id: 'em_atendimento', label: 'Em Atendimento', color: '#6366f1' },
+                        { id: 'em_negociacao', label: 'Em Negociação', color: '#f59e0b' },
+                        { id: 'nao_respondido', label: 'Não Respondido', color: '#ef4444' },
+                        { id: 'fechado', label: 'Fechado', color: '#10b981' },
+                        { id: 'venda_perdida', label: 'Venda Perdida', color: '#71717a' },
+                    ].map(s => (
+                        <button
+                            key={s.id}
+                            className={`${styles.statusOption} ${lead.status === s.id ? styles.statusActive : ''}`}
+                            style={{
+                                borderColor: lead.status === s.id ? s.color : undefined,
+                                background: lead.status === s.id ? `${s.color}20` : undefined,
+                            }}
+                            onClick={() => handleUpdateField('status', s.id)}
+                        >
+                            <span
+                                className={styles.statusDot}
+                                style={{ background: s.color }}
+                            />
+                            {s.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -153,18 +197,6 @@ export default function LeadInfo({ leadId, onClose }: LeadInfoProps) {
                     onChange={(e) => handleUpdateField('atendente_responsavel', e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                 />
-
-                {!lead.is_ai_active && (
-                    <>
-                        <label className={styles.label}>Retomada da IA em</label>
-                        <input
-                            type="datetime-local"
-                            className={styles.input}
-                            value={lead.ia_retomada_em ? new Date(lead.ia_retomada_em).toISOString().slice(0, 16) : ''}
-                            onChange={(e) => handleUpdateField('ia_retomada_em', e.target.value ? new Date(e.target.value).toISOString() : null)}
-                        />
-                    </>
-                )}
 
                 <label className={styles.label}>Notas Internas</label>
                 <textarea

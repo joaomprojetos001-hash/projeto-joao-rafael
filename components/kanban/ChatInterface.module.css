@@ -425,6 +425,139 @@
 }
 
 
+/* Mic Button */
+.micButton {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    border: 1px solid var(--color-border);
+}
+
+.micButton:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.micButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Recording Bar */
+.recordingBar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: 0 var(--spacing-md);
+    animation: slideUp 0.2s ease-out;
+}
+
+.recordingIndicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ef4444;
+    flex-shrink: 0;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.recordingTimer {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ef4444;
+    font-variant-numeric: tabular-nums;
+    min-width: 44px;
+}
+
+.recordingLabel {
+    flex: 1;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recordingCancel {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+}
+
+.recordingCancel:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: scale(1.05);
+}
+
+.recordingConfirm {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #22c55e;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.15s ease, background 0.15s ease;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+}
+
+.recordingConfirm:hover {
+    transform: scale(1.07);
+    background: #16a34a;
+}
+
+.recordingConfirm:active {
+    transform: scale(0.95);
+}
+
+/* Audio Player in bubbles */
+.audioPlayer {
+    margin-bottom: var(--spacing-sm);
+}
+
+.audioPlayer audio {
+    width: 100%;
+    max-width: 280px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    outline: none;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.4;
+        transform: scale(0.85);
+    }
+}
+
 @media (max-width: 768px) {
     .backButton {
         display: block;

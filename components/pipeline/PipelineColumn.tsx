@@ -21,12 +21,14 @@ interface Props {
     color: string
     leads: any[]
     products: Product[]
+    lastMessages: Record<string, string>
     onDragStart: (e: React.DragEvent, id: string) => void
     onViewLead: (lead: any) => void
     onMoveLead?: (leadId: string, status: string) => void
+    onGoToConversation?: (leadId: string) => void
 }
 
-export default function PipelineColumn({ title, color, leads, products, onDragStart, onViewLead, onMoveLead }: Props) {
+export default function PipelineColumn({ title, color, leads, products, lastMessages, onDragStart, onViewLead, onMoveLead, onGoToConversation }: Props) {
     return (
         <div className={styles.column}>
             <div className={styles.header} style={{ borderTopColor: color }}>
@@ -42,9 +44,11 @@ export default function PipelineColumn({ title, color, leads, products, onDragSt
                         key={lead.id}
                         lead={lead}
                         products={products}
+                        lastMessage={lastMessages[lead.phone]}
                         onDragStart={onDragStart}
                         onView={onViewLead}
                         onMove={onMoveLead}
+                        onGoToConversation={onGoToConversation}
                     />
                 ))}
             </div>
