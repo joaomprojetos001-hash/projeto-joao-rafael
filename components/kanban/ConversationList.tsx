@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import styles from './ConversationList.module.css'
 import { useCompany } from '@/context/CompanyContext'
-import { Search, Check, X } from 'lucide-react'
+import { Search, Check, X, ArrowUpDown } from 'lucide-react'
 
 interface Lead {
     id: string
@@ -16,6 +16,7 @@ interface Lead {
     status: string
     is_urgent: boolean
     updated_at: string
+    created_at: string
     atendente_responsavel?: string
     company_tag?: string
 }
@@ -35,6 +36,18 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState('all') // all, urgent, active
     const [searchTerm, setSearchTerm] = useState('')
+    const [sortOrder, setSortOrder] = useState('prioridade')
+
+    const SORT_OPTIONS = [
+        { value: 'prioridade', label: '📊 Prioridade (status)' },
+        { value: 'chegada_desc', label: '📅 Mais recentes' },
+        { value: 'chegada_asc', label: '📅 Mais antigos' },
+        { value: 'atualizacao', label: '🔄 Última atualização' },
+        { value: 'nome_az', label: '🔤 Nome A–Z' },
+        { value: 'nome_za', label: '🔤 Nome Z–A' },
+        { value: 'urgente', label: '🚨 Urgentes primeiro' },
+        { value: 'fechados', label: '✅ Fechados primeiro' },
+    ]
 
     // Track which leads have been attended by a human
     const [humanAttendedLeads, setHumanAttendedLeads] = useState<Set<string>>(new Set())
@@ -176,17 +189,71 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
         return new Date(lead.updated_at) > new Date(lastRead)
     }
 
-    const filteredLeads = leads.filter(lead => {
-        const matchesSearch =
-            (lead.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-            (lead.phone || '').includes(searchTerm)
+    // Priority order for status-based sorting
+    const STATUS_PRIORITY: Record<string, number> = {
+        'em_negociacao': 0,
+        'em_atendimento': 1,
+        'nao_respondido': 2,
+        'fechado': 3,
+        'venda_perdida': 4,
+    }
 
-        if (!matchesSearch) return false
+    const filteredLeads = useMemo(() => {
+        const filtered = leads.filter(lead => {
+            const matchesSearch =
+                (lead.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (lead.phone || '').includes(searchTerm)
 
-        if (filter === 'urgent') return lead.is_urgent
-        if (filter === 'active') return lead.status === 'em_atendimento' || lead.status === 'em_negociacao'
-        return true
-    })
+            if (!matchesSearch) return false
+
+            if (filter === 'urgent') return lead.is_urgent
+            if (filter === 'active') return lead.status === 'em_atendimento' || lead.status === 'em_negociacao'
+            return true
+        })
+
+        const sorted = [...filtered]
+        switch (sortOrder) {
+            case 'prioridade':
+                sorted.sort((a, b) => {
+                    const priorityA = STATUS_PRIORITY[a.status] ?? 99
+                    const priorityB = STATUS_PRIORITY[b.status] ?? 99
+                    if (priorityA !== priorityB) return priorityA - priorityB
+                    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+                })
+                break
+            case 'chegada_desc':
+                sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                break
+            case 'chegada_asc':
+                sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                break
+            case 'atualizacao':
+                sorted.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+                break
+            case 'nome_az':
+                sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'))
+                break
+            case 'nome_za':
+                sorted.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'pt-BR'))
+                break
+            case 'urgente':
+                sorted.sort((a, b) => {
+                    if (a.is_urgent && !b.is_urgent) return -1
+                    if (!a.is_urgent && b.is_urgent) return 1
+                    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+                })
+                break
+            case 'fechados':
+                sorted.sort((a, b) => {
+                    const aFechado = a.status === 'fechado' ? 0 : 1
+                    const bFechado = b.status === 'fechado' ? 0 : 1
+                    if (aFechado !== bFechado) return aFechado - bFechado
+                    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+                })
+                break
+        }
+        return sorted
+    }, [leads, searchTerm, filter, sortOrder])
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -213,6 +280,20 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className={styles.searchInput}
                     />
+                </div>
+
+                <div className={styles.sortContainer}>
+                    <ArrowUpDown size={14} className={styles.sortIcon} />
+                    <select
+                        className={styles.sortSelect}
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value)}
+                        title="Ordenar leads"
+                    >
+                        {SORT_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className={styles.filters}>

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import PipelineColumn from '@/components/pipeline/PipelineColumn'
 import PipelineLeadModal from '@/components/pipeline/PipelineLeadModal'
@@ -34,10 +35,63 @@ interface Product {
 }
 
 export default function PipelinePage() {
+    const router = useRouter()
     const [leads, setLeads] = useState<Lead[]>([])
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+    const [lastMessages, setLastMessages] = useState<Record<string, string>>({})
+    const [searchTerm, setSearchTerm] = useState('')
+    const [sortOrder, setSortOrder] = useState('chegada_desc')
+
+    const SORT_OPTIONS = [
+        { value: 'chegada_desc', label: '📅 Mais recentes primeiro' },
+        { value: 'chegada_asc', label: '📅 Mais antigos primeiro' },
+        { value: 'atualizacao', label: '🔄 Última atualização' },
+        { value: 'nome_az', label: '🔤 Nome A–Z' },
+        { value: 'nome_za', label: '🔤 Nome Z–A' },
+        { value: 'urgente', label: '🚨 Urgentes primeiro' },
+    ]
+
+    // Filter leads by search term (name or phone)
+    const filteredLeads = useMemo(() => {
+        if (!searchTerm.trim()) return leads
+        const term = searchTerm.toLowerCase().trim()
+        return leads.filter(lead =>
+            (lead.name?.toLowerCase() || '').includes(term) ||
+            (lead.phone || '').includes(term)
+        )
+    }, [leads, searchTerm])
+
+    // Sort filtered leads based on selected order
+    const sortedLeads = useMemo(() => {
+        const sorted = [...filteredLeads]
+        switch (sortOrder) {
+            case 'chegada_desc':
+                sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                break
+            case 'chegada_asc':
+                sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                break
+            case 'atualizacao':
+                sorted.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+                break
+            case 'nome_az':
+                sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'))
+                break
+            case 'nome_za':
+                sorted.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'pt-BR'))
+                break
+            case 'urgente':
+                sorted.sort((a, b) => {
+                    if (a.is_urgent && !b.is_urgent) return -1
+                    if (!a.is_urgent && b.is_urgent) return 1
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                })
+                break
+        }
+        return sorted
+    }, [filteredLeads, sortOrder])
 
     const handleUpdateLead = (leadId: string, updates: Partial<Lead>) => {
         setLeads(prev => prev.map(l =>
@@ -96,6 +150,36 @@ export default function PipelinePage() {
                 return false
             })
             setLeads(visibleLeads)
+
+            // Fetch last human message for each lead
+            const uniquePhones = [...new Set(visibleLeads.map(l => l.phone))]
+            if (uniquePhones.length > 0) {
+                const messagesMap: Record<string, string> = {}
+                // Fetch in batches to avoid too many queries
+                const batchSize = 50
+                for (let i = 0; i < uniquePhones.length; i += batchSize) {
+                    const batch = uniquePhones.slice(i, i + batchSize)
+                    const { data: msgs } = await supabase
+                        .from('messages')
+                        .select('session_id, message')
+                        .in('session_id', batch)
+                        .contains('message', { type: 'human' })
+                        .order('created_at', { ascending: false })
+
+                    if (msgs) {
+                        msgs.forEach(m => {
+                            // Only keep the first (most recent) message per session
+                            if (!messagesMap[m.session_id] && m.message?.content) {
+                                const content = m.message.content
+                                messagesMap[m.session_id] = typeof content === 'string'
+                                    ? content.substring(0, 100)
+                                    : ''
+                            }
+                        })
+                    }
+                }
+                setLastMessages(messagesMap)
+            }
         }
     }
 
@@ -196,8 +280,42 @@ export default function PipelinePage() {
         <div className={styles.container}>
             <div className={styles.header}>
                 <h1>Pipeline de Vendas</h1>
-                <div className={styles.stats}>
-                    {leads.length} leads totais
+                <div className={styles.headerRight}>
+                    <div className={styles.searchContainer}>
+                        <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        <input
+                            type="text"
+                            placeholder="Buscar por nome ou telefone..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className={styles.searchInput}
+                        />
+                        {searchTerm && (
+                            <button
+                                className={styles.searchClear}
+                                onClick={() => setSearchTerm('')}
+                                title="Limpar busca"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
+                    <select
+                        className={styles.sortSelect}
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value)}
+                        title="Ordenar leads"
+                    >
+                        {SORT_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
+                    <div className={styles.stats}>
+                        {sortedLeads.length}{searchTerm ? `/${leads.length}` : ''} leads
+                    </div>
                 </div>
             </div>
 
@@ -210,7 +328,7 @@ export default function PipelinePage() {
                 >
                     {COLUMNS.map(col => (
                         <option key={col.id} value={col.id}>
-                            {col.title} ({leads.filter(l => l.status === col.id).length})
+                            {col.title} ({sortedLeads.filter(l => l.status === col.id).length})
                         </option>
                     ))}
                 </select>
@@ -227,11 +345,13 @@ export default function PipelinePage() {
                         <PipelineColumn
                             title={col.title}
                             color={col.color}
-                            leads={leads.filter(l => l.status === col.id)}
+                            leads={sortedLeads.filter(l => l.status === col.id)}
                             products={products}
+                            lastMessages={lastMessages}
                             onDragStart={handleDragStart}
                             onViewLead={setSelectedLead}
                             onMoveLead={(leadId) => openMoveModal(leadId)}
+                            onGoToConversation={(leadId) => router.push(`/kanban?leadId=${leadId}`)}
                         />
                     </div>
                 ))}

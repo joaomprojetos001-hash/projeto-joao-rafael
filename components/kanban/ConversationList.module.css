@@ -52,6 +52,52 @@
     box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1);
 }
 
+/* Sort Dropdown */
+.sortContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.sortIcon {
+    position: absolute;
+    left: 10px;
+    color: var(--color-text-secondary);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.sortSelect {
+    width: 100%;
+    padding: 8px 12px 8px 32px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+}
+
+.sortSelect:hover {
+    border-color: var(--color-gold-primary);
+}
+
+.sortSelect:focus {
+    border-color: var(--color-gold-primary);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1);
+}
+
 .filters {
     display: flex;
     gap: 8px;
