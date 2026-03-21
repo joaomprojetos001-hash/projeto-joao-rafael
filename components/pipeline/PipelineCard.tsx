@@ -106,7 +106,7 @@ export default function PipelineCard({ lead, products, lastMessage, onDragStart,
 
             <div className={styles.footer}>
                 <span className={styles.time}>
-                    {new Date(lead.updated_at).toLocaleDateString()}
+                    {new Date(lead.created_at).toLocaleDateString()}
                 </span>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     {onMove && (

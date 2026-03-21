@@ -76,6 +76,28 @@
     opacity: 0.7;
 }
 
+/* WhatsApp-style date separator */
+.dateSeparator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm) 0;
+    margin: var(--spacing-xs) 0;
+}
+
+.dateSeparatorLabel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 14px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    user-select: none;
+    letter-spacing: 0.02em;
+}
+
 .loading {
     display: flex;
     align-items: center;

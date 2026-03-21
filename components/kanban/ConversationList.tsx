@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
@@ -37,6 +37,7 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
     const [filter, setFilter] = useState('all') // all, urgent, active
     const [searchTerm, setSearchTerm] = useState('')
     const [sortOrder, setSortOrder] = useState('prioridade')
+    const hasAutoSelectedRef = useRef(false)
 
     const SORT_OPTIONS = [
         { value: 'prioridade', label: '📊 Prioridade (status)' },
@@ -114,9 +115,12 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
 
                 setLeads(visibleLeads)
 
-                if (urlLeadId && !selectedLeadId) {
+                if (urlLeadId && !hasAutoSelectedRef.current) {
                     const targetLead = visibleLeads.find(l => l.id === urlLeadId)
-                    if (targetLead) onSelectLead(urlLeadId)
+                    if (targetLead) {
+                        onSelectLead(urlLeadId)
+                        hasAutoSelectedRef.current = true
+                    }
                 }
             }
             setLoading(false)
@@ -345,7 +349,12 @@ export default function ConversationList({ selectedLeadId, onSelectLead }: Props
                                 <div className={styles.leadHeader}>
                                     <span className={styles.leadName}>{lead.name || lead.phone}</span>
                                     <span className={styles.time}>
-                                        {format(new Date(lead.updated_at), 'HH:mm')}
+                                        {(() => {
+                                            const d = new Date(lead.updated_at)
+                                            const now = new Date()
+                                            const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+                                            return isToday ? format(d, 'HH:mm') : format(d, 'dd/MM HH:mm')
+                                        })()}
                                     </span>
                                 </div>
 

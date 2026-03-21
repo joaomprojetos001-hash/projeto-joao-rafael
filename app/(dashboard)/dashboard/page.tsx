@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import styles from './dashboard.module.css'
@@ -221,14 +221,15 @@ export default function DashboardPage() {
             queryClosed = applyFilter(queryClosed)
             const { count: closedTotal } = await queryClosed
 
-            // 4. Leads Urgentes (Top 3, always visible regardless of company/date filter)
+            // 4. Leads Urgentes (all pending urgent, excluding already handled)
             let queryUrgents = supabase
                 .from('leads')
                 .select('*')
                 .eq('is_urgent', true)
                 .neq('status', 'em_atendimento')
+                .neq('status', 'fechado')
+                .neq('status', 'venda_perdida')
                 .order('updated_at', { ascending: false })
-                .limit(3)
             if (!isAdmin && productIds && productIds.length > 0) {
                 queryUrgents = queryUrgents.in('produto_interesse', productIds)
             } else if (!isAdmin && (!productIds || productIds.length === 0)) {
@@ -315,6 +316,31 @@ export default function DashboardPage() {
         'custom': 'Custom'
     }
 
+    // Carousel state for urgent leads
+    const [carouselPage, setCarouselPage] = useState(0)
+    const carouselRef = useRef<HTMLDivElement>(null)
+    const CARDS_PER_PAGE = 3
+    const totalPages = Math.ceil(urgentLeads.length / CARDS_PER_PAGE)
+
+    const goToPage = useCallback((page: number) => {
+        const clamped = Math.max(0, Math.min(page, totalPages - 1))
+        setCarouselPage(clamped)
+        if (carouselRef.current) {
+            const cardWidth = carouselRef.current.scrollWidth / urgentLeads.length
+            carouselRef.current.scrollTo({
+                left: clamped * CARDS_PER_PAGE * cardWidth,
+                behavior: 'smooth'
+            })
+        }
+    }, [totalPages, urgentLeads.length])
+
+    // Reset page when urgentLeads change
+    useEffect(() => {
+        if (carouselPage >= totalPages && totalPages > 0) {
+            setCarouselPage(totalPages - 1)
+        }
+    }, [urgentLeads.length, totalPages, carouselPage])
+
     if (loading) return <div className={styles.loading}>Carregando dashboard...</div>
 
     return (
@@ -394,42 +420,86 @@ export default function DashboardPage() {
                     )}
                 </div>
 
-                <div className={styles.urgentList}>
-                    {urgentLeads.length === 0 ? (
-                        <div className={styles.emptyState}>
-                            <p>🎉 Nenhum lead urgente pendente!</p>
-                        </div>
-                    ) : (
-                        urgentLeads.map(lead => (
-                            <div key={lead.id} className={`card ${styles.urgentCard}`}>
-                                <div className={styles.urgentHeader}>
-                                    <div>
-                                        <h3>{lead.name || lead.phone}</h3>
-                                        <p className="text-sm text-secondary">{lead.phone}</p>
+                {urgentLeads.length === 0 ? (
+                    <div className={styles.emptyState}>
+                        <p>🎉 Nenhum lead urgente pendente!</p>
+                    </div>
+                ) : (
+                    <div className={styles.urgentCarouselWrapper}>
+                        {/* Left Arrow */}
+                        {totalPages > 1 && (
+                            <button
+                                className={`${styles.urgentNavBtn} ${styles.urgentNavBtnLeft}`}
+                                onClick={() => goToPage(carouselPage - 1)}
+                                disabled={carouselPage === 0}
+                                aria-label="Anterior"
+                            >
+                                ‹
+                            </button>
+                        )}
+
+                        {/* Cards Container */}
+                        <div className={styles.urgentList} ref={carouselRef}>
+                            {urgentLeads.map(lead => (
+                                <div key={lead.id} className={`card ${styles.urgentCard}`}>
+                                    <div className={styles.urgentHeader}>
+                                        <div>
+                                            <h3>{lead.name || lead.phone}</h3>
+                                            <p className="text-sm text-secondary">{lead.phone}</p>
+                                        </div>
+                                        <span className="badge badge-warning">Urgente</span>
                                     </div>
-                                    <span className="badge badge-warning">Urgente</span>
+                                    <p className="text-sm text-secondary" style={{ marginTop: 'var(--spacing-sm)' }}>
+                                        Status: <span style={{ textTransform: 'capitalize' }}>{lead.status.replace('_', ' ')}</span>
+                                    </p>
+                                    <button
+                                        className="btn btn-primary"
+                                        style={{ marginTop: 'var(--spacing-md)', width: '100%', background: '#FF8A80', borderColor: '#FF8A80' }}
+                                        onClick={async () => {
+                                            const supabase = createClient()
+                                            await supabase
+                                                .from('leads')
+                                                .update({ status: 'em_atendimento' })
+                                                .eq('id', lead.id)
+                                            router.push(`/kanban?leadId=${lead.id}`)
+                                        }}
+                                    >
+                                        Atender Agora
+                                    </button>
                                 </div>
-                                <p className="text-sm text-secondary" style={{ marginTop: 'var(--spacing-sm)' }}>
-                                    Status: <span style={{ textTransform: 'capitalize' }}>{lead.status.replace('_', ' ')}</span>
-                                </p>
-                                <button
-                                    className="btn btn-primary"
-                                    style={{ marginTop: 'var(--spacing-md)', width: '100%', background: '#FF8A80', borderColor: '#FF8A80' }}
-                                    onClick={async () => {
-                                        const supabase = createClient()
-                                        await supabase
-                                            .from('leads')
-                                            .update({ status: 'em_atendimento' })
-                                            .eq('id', lead.id)
-                                        router.push(`/kanban?leadId=${lead.id}`)
-                                    }}
-                                >
-                                    Atender Agora
-                                </button>
-                            </div>
-                        ))
-                    )}
-                </div>
+                            ))}
+                        </div>
+
+                        {/* Right Arrow */}
+                        {totalPages > 1 && (
+                            <button
+                                className={`${styles.urgentNavBtn} ${styles.urgentNavBtnRight}`}
+                                onClick={() => goToPage(carouselPage + 1)}
+                                disabled={carouselPage === totalPages - 1}
+                                aria-label="Próximo"
+                            >
+                                ›
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* Page indicator */}
+                {totalPages > 1 && (
+                    <div className={styles.urgentPageIndicator}>
+                        {Array.from({ length: totalPages }).map((_, i) => (
+                            <button
+                                key={i}
+                                className={`${styles.urgentDot} ${i === carouselPage ? styles.urgentDotActive : ''}`}
+                                onClick={() => goToPage(i)}
+                                aria-label={`Página ${i + 1}`}
+                            />
+                        ))}
+                        <span className={styles.urgentPageText}>
+                            {carouselPage * CARDS_PER_PAGE + 1}–{Math.min((carouselPage + 1) * CARDS_PER_PAGE, urgentLeads.length)} de {urgentLeads.length}
+                        </span>
+                    </div>
+                )}
             </section>
 
             {/* Painel de Métricas */}

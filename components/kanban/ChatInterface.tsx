@@ -608,23 +608,49 @@ export default function ChatInterface({ leadId, onBack }: Props) {
                 {loading ? (
                     <div className={styles.loading}>Carregando mensagens...</div>
                 ) : (
-                    messages.map((msg) => {
+                    messages.map((msg, index) => {
                         if (!msg.message) return null // Skip malformed messages
                         const isHuman = msg.message.type === 'human'
                         const isDashboardAgent = msg.message.metadata?.origin === 'dashboard_human'
 
+                        // Date separator logic
+                        const msgDate = new Date(msg.created_at)
+                        const prevMsg = index > 0 ? messages[index - 1] : null
+                        const prevDate = prevMsg ? new Date(prevMsg.created_at) : null
+                        const showDateSeparator = !prevDate ||
+                            msgDate.getDate() !== prevDate.getDate() ||
+                            msgDate.getMonth() !== prevDate.getMonth() ||
+                            msgDate.getFullYear() !== prevDate.getFullYear()
+
+                        const getDateLabel = (d: Date) => {
+                            const now = new Date()
+                            const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+                            if (isToday) return 'Hoje'
+                            const yesterday = new Date(now)
+                            yesterday.setDate(yesterday.getDate() - 1)
+                            const isYesterday = d.getDate() === yesterday.getDate() && d.getMonth() === yesterday.getMonth() && d.getFullYear() === yesterday.getFullYear()
+                            if (isYesterday) return 'Ontem'
+                            return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                        }
+
                         return (
-                            <div
-                                key={msg.id}
-                                className={`${styles.messageWrapper} ${!isHuman ? styles.wrapperAi : styles.wrapperHuman}`}
-                            >
-                                <div className={`${styles.bubble} ${!isHuman ? styles.bubbleAi : styles.bubbleHuman}`}>
-                                    {renderMediaContent(msg)}
-                                    <p>{cleanMessageContent(msg.message.content)}</p>
-                                    <span className={styles.timestamp}>
-                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        {isDashboardAgent && <span title="Enviado por atendente"> 👤</span>}
-                                    </span>
+                            <div key={msg.id}>
+                                {showDateSeparator && (
+                                    <div className={styles.dateSeparator}>
+                                        <span className={styles.dateSeparatorLabel}>{getDateLabel(msgDate)}</span>
+                                    </div>
+                                )}
+                                <div
+                                    className={`${styles.messageWrapper} ${!isHuman ? styles.wrapperAi : styles.wrapperHuman}`}
+                                >
+                                    <div className={`${styles.bubble} ${!isHuman ? styles.bubbleAi : styles.bubbleHuman}`}>
+                                        {renderMediaContent(msg)}
+                                        <p>{cleanMessageContent(msg.message.content)}</p>
+                                        <span className={styles.timestamp}>
+                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {isDashboardAgent && <span title="Enviado por atendente"> 👤</span>}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         )
